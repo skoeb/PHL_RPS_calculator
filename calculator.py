@@ -20,6 +20,8 @@ display(HTML("<style>.output_wrapper, .output {height:auto !important; max-heigh
 
 get_ipython().run_line_magic('matplotlib', 'inline')
 
+qgrid.enable()
+
 style = {'description_width': '300px'}
 layout = {'width': '700px'}
 
@@ -72,23 +74,13 @@ def bar_plotter(demand = 100000, demand_growth = 0.045, eligible_re_2018 = 10000
     plt.ylabel('MWh / REC')
     plt.title('Annual RPS Requirements and REC Balance')
 
-
+    plt.show()
 
     #qgrid df
     grid = df[['demand','rec_req','rec_balance','rec_change']]
     grid = grid.round(0)
     grid.columns = ['Demand','RPS Retirements','REC Balance','REC Balance Change']
-    col_options = {
-        'width': 30,
-    }
-    
-    qgrid_widget = qgrid.show_grid(grid,
-                                   column_options = col_options,
-                                   show_toolbar = False)
-    
-    plt.show()
-    display(qgrid_widget)
-
+    display(grid)
     
 demandwidget = widgets.Text(
                     value='100000',
