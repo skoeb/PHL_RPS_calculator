@@ -80,7 +80,7 @@ def bar_plotter(demand = 100000, demand_growth = 0.045, eligible_re_2018 = 10000
     grid = df[['demand','rec_req','rec_balance','rec_change']]
     grid = grid.round(0)
     grid.columns = ['Demand','RPS Retirements','REC Balance','REC Balance Change']
-    display(grid)
+    display(HTML(grid.to_html()))
     
 demandwidget = widgets.Text(
                     value='100000',
