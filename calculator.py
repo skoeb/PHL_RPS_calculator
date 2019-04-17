@@ -8,6 +8,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import qgrid
 
 import ipywidgets as widgets
 import warnings
@@ -34,13 +35,15 @@ def rps_df_maker(demand, demand_growth, eligible_re_2018,
     df = df.set_index('year')
     
     df['demand_growth'] = demand_growth + 1
-    df.loc[2018:2019, 'demand_growth'] = 1
+    df.loc[2018, 'demand_growth'] = 1
     df['demand_growth'] = df['demand_growth'].cumprod()
     df['demand'] = demand * df['demand_growth']
     
     df.loc[2020:2022,'rps_marginal_req'] = annual_rps_inc_2020 #no requirement till 2020
     df.loc[2023:, 'rps_marginal_req'] = annual_rps_inc_2023 #presidential elections in 2022
     df['rps_req'] = df['rps_marginal_req'].cumsum()
+
+    df = df.fillna(0)
     
     df['rec_req'] = df['rps_req'] * df['demand'] * (1 + losses)
     
@@ -61,13 +64,28 @@ def bar_plotter(demand = 100000, demand_growth = 0.045, eligible_re_2018 = 10000
     
     sns.set_style('darkgrid')
     
-    fig, ax = plt.subplots(figsize = (7,4), dpi = 100)
+    fig, ax = plt.subplots(figsize = (10,4), dpi = 100)
     df[['demand','rec_req','rec_balance','rec_change']].plot.bar(rot = 45, ax = ax)
     plt.legend(labels = ['Demand','RPS Retirements','REC Balance','REC Balance Change'],
                title = 'Estimated Values', fontsize = 8)
     plt.xlabel('Year')
     plt.ylabel('MWh / REC')
     plt.title('Annual RPS Requirements and REC Balance')
+
+
+
+    #qgrid df
+    grid = df[['demand','rec_req','rec_balance','rec_change']]
+    grid = grid.round(0)
+    grid.columns = ['Demand','RPS Retirements','REC Balance','REC Balance Change']
+    col_options = {
+        'width': 30,
+    }
+    
+    qgrid_widget = qgrid.show_grid(grid,
+                                   column_options = col_options,
+                                   show_toolbar = False)
+    display(qgrid_widget)
     plt.show()
     
 demandwidget = widgets.Text(
