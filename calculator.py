@@ -85,8 +85,10 @@ def bar_plotter(demand = 100000, demand_growth = 0.045, eligible_re_2018 = 10000
     qgrid_widget = qgrid.show_grid(grid,
                                    column_options = col_options,
                                    show_toolbar = False)
-    display(qgrid_widget)
+    
     plt.show()
+    display(qgrid_widget)
+
     
 demandwidget = widgets.Text(
                     value='100000',
