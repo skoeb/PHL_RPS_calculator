@@ -2,3 +2,4 @@ matplotlib
 ipywidgets
 seaborn
 pandas
+qgrid
