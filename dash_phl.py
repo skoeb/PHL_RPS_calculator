@@ -54,6 +54,8 @@ def rps_df_maker(demand, demand_growth, eligible_re_2018,
     
 app = dash.Dash(__name__)
 
+server = app.server
+
 # Boostrap CSS.
 app.css.append_css({
     "external_url":"https://codepen.io/chriddyp/pen/bWLwgP.css"
