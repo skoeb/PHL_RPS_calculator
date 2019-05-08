@@ -1,5 +1,4 @@
-matplotlib
-ipywidgets
-seaborn
-pandas
-qgrid
+dash==0.42.0
+dash-table==3.6.0
+plotly==3.8.1
+pandas==0.24.2
