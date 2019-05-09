@@ -154,7 +154,7 @@ app.layout = html.Div([
                     In this portion of the calculator, enter basic data about your utility such as your annual demand,
                     and existing renewables. While RECs are created based on renewable generation (including line losses), RPS requirements are based on sales (demand).
                     For the sake of simplicity, losses are ignored by this calculator, but consider them when deciding how much renewables you need to build. 
-                    
+
                     * Existing Eligible RE Annual Generation includes generation received from Feed-in-Tariffs,
                     existing customer net-metering installations, and other renewables owned or contracted by the utility which have been installed since 2008. Keep in mind that this number does not include *all* renewable power, such as renewables built before 2008. 
                     * The default Annual RPS Increment is 1% per year, although this is subject to change.
@@ -537,6 +537,7 @@ html.Div(id='intermediate_dict_scenario', style={'display':'none'}),
 html.Div(id='intermediate_lcoe_df', style={'display':'none'}),
 dcc.Markdown("""
 Todo:
+* Format integers as strings with commas
 * Check with Marlon about email
 * Figure out how to change color of Update Scenario button, or do away with and have autoupdates?
 * List capacity factors, or find a better way to expalin. This is kind of included in the LCOE table though. 
@@ -1122,7 +1123,7 @@ def savings_text_maker(json):
     end_cost_kwh = round(end_cost / end_demand / 1000,1)
 
     out = f"""
-    ##### Your current generation costs are Php {start_cost}, or **Php {start_cost_kwh} / kWh**. By switching to **{int(end_re_pct * 100)}% renewables** in {input_dict['end_year']}, your generation costs would be Php {end_cost}, or **Php {end_cost_kwh} / kWh**. Currently you are creating {input_dict['start_recs']} RECS, and in 2030 you would be creating {input_dict['end_recs']} RECs per year.
+    ##### Your current generation costs are Php {start_cost}, or **Php {start_cost_kwh} / kWh**. By switching to **{int(end_re_pct * 100)}% renewables** in {input_dict['end_year']}, your generation costs would be Php {end_cost}, or **Php {end_cost_kwh} / kWh**. Currently you are creating {input_dict['start_recs']} RECS, and in 2030 you would be creating {int(input_dict['end_recs'])} RECs per year.
         """.replace('  ', '')
 
     return out
