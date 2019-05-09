@@ -1,0 +1,13 @@
+﻿resource,pct
+Coal,0.39
+Natural Gas,0.20
+Oil,0.06
+WESM,0.10
+GEOP,0.00
+Feed-in-Tariff,0.03
+Net-Metering,0.00
+Utility-Scale Solar,0.00
+Wind,0.01
+Biomass,0.00
+Geothermal,0.12
+Hydro,0.09

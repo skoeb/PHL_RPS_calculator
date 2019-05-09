@@ -1,0 +1,43 @@
+﻿Year,Item,Technology,usd,pesos
+2010,MIN,Biomass,0.04,2
+2010,MAX,Biomass,0.21,10.5
+2010,AVG,Biomass,0.07,3.5
+2017,MIN,Biomass,0.05,2.5
+2017,MAX,Biomass,0.14,7
+2017,AVG,Biomass,0.07,3.5
+2010,MIN,Geothermal,0.04,2
+2010,MAX,Geothermal,0.08,4
+2010,AVG,Geothermal,0.05,2.5
+2017,MIN,Geothermal,0.03,1.5
+2017,MAX,Geothermal,0.14,7
+2017,AVG,Geothermal,0.07,3.5
+2010,MIN,Hydro,0.02,1
+2010,MAX,Hydro,0.32,16
+2010,AVG,Hydro,0.04,2
+2017,MIN,Hydro,0.02,1
+2017,MAX,Hydro,0.22,11
+2017,AVG,Hydro,0.05,2.5
+2010,MIN,Utility-Scale Solar,0.06,3
+2010,MAX,Utility-Scale Solar,0.4,20
+2010,AVG,Utility-Scale Solar,0.36,18
+2017,MIN,Utility-Scale Solar,0.05,2.5
+2017,MAX,Utility-Scale Solar,0.35,17.5
+2017,AVG,Utility-Scale Solar,0.1,5
+2010,MIN,Wind,0.05,2.5
+2010,MAX,Wind,0.21,10.5
+2010,AVG,Wind,0.08,4
+2017,MIN,Wind,0.04,2
+2017,MAX,Wind,0.28,14
+2017,AVG,Wind,0.06,3
+,,,,
+,,,,
+,,,,
+,,,,
+,,,,
+,,,,
+,,,,
+,,,,
+,,,,
+,,,,
+,,,,
+,,,,
