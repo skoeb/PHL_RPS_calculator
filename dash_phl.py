@@ -1,5 +1,6 @@
 import dash
 import dash_table
+import dash_daq as daq
 import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Output, Input, State
@@ -13,7 +14,7 @@ import json as json_func
 dummy_df = pd.read_csv('dummy_df.csv')
 dummy_df['Year'] = dummy_df.index
 dummy_df_display = dummy_df[['Year','demand','rec_req','rec_balance','rec_change']]
-dummy_df_display.columns = ['Year','Demand (MWh)','RPS Requirement (RECs/MWhs)','REC Balance (RECs)','REC Balance Change (RECs)']
+dummy_df_display.columns = ['Year','Demand (MWh)','RPS Requirement','REC Balance','REC Balance Change']
 
 irena_lcoe_df = pd.read_csv("irena_lcoe.csv")
 irena_lcoe_df = irena_lcoe_df.dropna(subset = ['Technology'])
@@ -40,7 +41,7 @@ color_dict = {
 }
 
 
-def rps_df_maker(demand, demand_growth, eligible_re_2018,
+def rps_df_maker(demand, demand_growth, new_re_input, fit_MW,
                  annual_rps_inc_2020, annual_rps_inc_2023,
                  end_year):
 
@@ -62,19 +63,35 @@ def rps_df_maker(demand, demand_growth, eligible_re_2018,
 
     df = df.fillna(0)
 
-    df['fit'] =  eligible_re_2018
-    fit_requirement = df['fit'].copy()
+    df['fit'] =  fit_MW
+    initial_fit_pct = fit_MW / demand
+
+    df['existing_re'] = new_re_input
+    fit_requirement = pd.Series(initial_fit_pct, index = df.index)
     fit_requirement[2018] = 0
     fit_requirement[2019] = 0
-    df['rec_req'] = (df['rps_req'] * df['demand']) + fit_requirement
+    df['rps_req'] = df['rps_req'] + fit_requirement
 
-    
-    df['rec_change'] = df['fit'] - df['rec_req']
+    demand_for_calc = df['demand'].copy()
+    demand_for_calc.index = [i + 1 for i in demand_for_calc.index]
+    demand_for_calc.loc[2018] = 0
+    demand_for_calc.loc[2019] = 0
+    demand_for_calc.loc[2020] = df['demand'][2018]
+    demand_for_calc = demand_for_calc.sort_index()
+    df['demand_for_calc'] = demand_for_calc
+
+    df['rec_req'] = df['rps_req'] * df['demand_for_calc']
+
+    df['rec_change'] = (df['fit'] + df['existing_re']) - df['rec_req']
     df['rec_balance'] = df['rec_change'].cumsum()
+
+    print(df)
 
     return df
     
 app = dash.Dash(__name__)
+
+app.title = 'CEIA RPS Calculators'
 
 server = app.server
 
@@ -82,7 +99,6 @@ server = app.server
 app.css.append_css({
     "external_url":"https://codepen.io/chriddyp/pen/bWLwgP.css"
 })
-
 
 app.layout = html.Div([
 
@@ -155,8 +171,8 @@ app.layout = html.Div([
                     and existing renewables. While RECs are created based on renewable generation (including line losses), RPS requirements are based on sales (demand).
                     For the sake of simplicity, losses are ignored by this calculator, but consider them when deciding how much renewables you need to build. 
 
-                    * Existing Eligible RE Annual Generation includes generation received from Feed-in-Tariffs,
-                    existing customer net-metering installations, and other renewables owned or contracted by the utility which have been installed since 2008. Keep in mind that this number does not include *all* renewable power, such as renewables built before 2008. 
+                    * Existing Eligible RE Annual Generation includes generation received from existing customer net-metering installations,
+                    new power supply agreements, and other renewables owned or contracted by the utility which have been installed since 2008. Keep in mind that this number does not include *all* renewable power, such as renewables built before 2008. 
                     * The default Annual RPS Increment is 1% per year, although this is subject to change.
                     Other factors, such as elections in 2022 could also have an impact on this policy. Additionally, utilities often desire going beyond this requirement in order to convey to their customers that they are supporting renewable energy or to achieve cost savings.
                     * Please contact the CEIA's in-country lead––Marlon Apanada––with any questions at [amj@allatropevc.com](amj@allatropevc.com)
@@ -185,27 +201,27 @@ app.layout = html.Div([
 
         html.Div([
             html.P("Demand Annual (MWh):"),
-            dcc.Input(id="demand", value=100000, type="text")
+            dcc.Input(id="demand", value=418355, type="number")
                 ],
             className = 'three columns',
             style={'margin-top': 20}
         ),
 
         html.Div([
-            html.P("Existing Eligible RE Annual Generation (MWh):"),
-            dcc.Input(id="eligible_re_2018", value=3000, type="text")
-                ], 
+            html.P("FiT Allocation (MWh):"),
+            dcc.Input(id="fit_MW", value=12942, type="number")
+                ],
             className = 'three columns',
             style={'margin-top': 20}
         ),
 
         html.Div([
-        html.Button(id="submit-button", n_clicks=0, children="Update Scenario")
-        ],
-        className = 'one columns',
-        style={'margin-top':50}
-        ),
-
+            html.P("Existing Eligible RE (MWh):"),
+            dcc.Input(id="new_re_input", value=0, type="number")
+                ], 
+            className = 'three columns',
+            style={'margin-top': 20}
+        )
         ], 
     className = 'row',
     style={'alignVertical':True}
@@ -214,8 +230,9 @@ app.layout = html.Div([
     html.Div(
         [
         html.Div([
-            html.P("Annual Demand Growth:"),
-            dcc.Slider(
+            html.P("Annual Demand Growth:",
+            style={'margin-bottom':40}),
+            daq.Slider(
                 id='demand_growth',
                 min=0,
                 max=15,
@@ -228,15 +245,17 @@ app.layout = html.Div([
                     9:{'label':'9%', 'style': {'color': '#77b0b1'}},
                     12:{'label':'12%', 'style': {'color': '#77b0b1'}},
                     15:{'label':'15%', 'style': {'color': '#77b0b1'}}
-                    })
+                    },
+                handleLabel={"showCurrentValue": True,"label": "PERCENT"})
                 ],
-            className = 'four columns',
+            className = 'three columns',
             style={'margin-top': 20}
         ),
         
         html.Div([
-            html.P("2020-2023 Annual Increment:"),
-            dcc.Slider(
+            html.P("2020-2023 Annual Increment:",
+            style={'margin-bottom':40}),
+            daq.Slider(
                 id='annual_rps_inc_2020',
                 min=0,
                 max=3,
@@ -247,15 +266,17 @@ app.layout = html.Div([
                     1:{'label':'1%', 'style': {'color': '#77b0b1'}},
                     2:{'label':'2%', 'style': {'color': '#77b0b1'}},
                     3:{'label':'3%', 'style': {'color': '#77b0b1'}},
-                    })
+                    },
+                handleLabel={"showCurrentValue": True,"label": "PERCENT"})
                 ],
-            className = 'four columns',
+            className = 'three columns',
             style={'margin-top': 20}
         ),
 
         html.Div([
-            html.P("2023-End Annual Increment:"),
-            dcc.Slider(
+            html.P("2023-End Annual Increment:",
+            style={'margin-bottom':40}),
+            daq.Slider(
                 id='annual_rps_inc_2023',
                 min=0,
                 max=3,
@@ -266,10 +287,19 @@ app.layout = html.Div([
                     1:{'label':'1%', 'style': {'color': '#77b0b1'}},
                     2:{'label':'2%', 'style': {'color': '#77b0b1'}},
                     3:{'label':'3%', 'style': {'color': '#77b0b1'}},
-                    })
+                    },
+            handleLabel={"showCurrentValue": True,"label": "PERCENT"})
                 ],
-            className = 'four columns',
+            className = 'three columns',
             style={'margin-top': 20}
+        ),
+
+        html.Div([
+        html.Button(id="submit-button", n_clicks=0, children="Update Scenario", style={'color':'white','backgroundColor':'#ff8726'})
+        # daq.StopButton(id="submit-button", n_clicks=0, buttonText='Update Scenario', size = 180, children="Update Scenario")
+        ],
+        className = 'one columns',
+        style={'margin-top':50}
         ),
 
     ],
@@ -369,7 +399,7 @@ html.Div([
     differences in resource capacity factor, and operations & maintence expenses. For fossil-fuel generators, the LCOE also includes the cost of fuel such as coal or natural gas,
      which is often volitle in the Philippines. 
 
-    IRENA's 2017 data suggests that the global LCOE for renewables ranges from $0.05 (Php 2.5) per kWh for hydro to $0.10 (Php 2.5) per kWh for solar installations. Keep in mind that these are median values,
+    IRENA's 2017 data suggests that the global LCOE for renewables ranges from $0.05 (Php 2.5) per kWh for hydro to $0.10 (Php 5) per kWh for solar installations. Keep in mind that these are median values,
     and that ranges between the fifth and ninety-fifth percentile are displayed in the graph below. Also understand that some technologies, like geothermal or hydro might only be suitable for larger capacity installations,
     while solar, biomass, and wind are more likely to be scalable to your custom capacity requirements. 
     """.replace('  ', ''))
@@ -487,7 +517,6 @@ html.Div([
                 options=[
                     {'label':'Utility-Scale Solar Growth', 'value':'SUN'},
                     {'label':'High Net-Metering and GEOP Adoption', 'value':'NEM'},
-                    {'label':'Balanced Utility-Scale, Net-Metering, and GEOP Solar Adoption','value':'SUNALL'},
                     {'label':'Wind Growth', 'value':'WND'},
                     {'label':'Biomass Growth', 'value':'BIO'},
                     {'label':'Geothermal Growth', 'value':'GEO'},
@@ -535,21 +564,6 @@ html.Div(id='intermediate_df', style={'display':'none'}),
 html.Div(id='intermediate_df_capacity', style={'display':'none'}),
 html.Div(id='intermediate_dict_scenario', style={'display':'none'}),
 html.Div(id='intermediate_lcoe_df', style={'display':'none'}),
-dcc.Markdown("""
-Todo:
-* Format integers as strings with commas
-* Check with Marlon about email
-* Figure out how to change color of Update Scenario button, or do away with and have autoupdates?
-* List capacity factors, or find a better way to expalin. This is kind of included in the LCOE table though. 
-* Add in project pipeline (i.e. confirmed projects)?
-* Add citations
-* Add CEIA footer
-* Other additional text needs?
-* URL redirect to CEIA
-* Double check sensitivities, try to break things
-* Make sure I'm understanding how line losses are incorporated in the RPS
-* Copy text out of editor and into Word to spell check
-""")
 
 # dcc.Storage(id='intermediate_dict_scenario', storage_type='session'),
 
@@ -558,26 +572,37 @@ className='ten columns offset-by-one'
 )
 
 @app.callback(
+    Output("fit_MW","value"),
+    [Input("demand","value")]
+)
+def fit_mw_updater(demand):
+    if demand != '':
+        national_demand = 105529277
+        fit_total = 3264621
+        utility_fit = round((float(demand)/national_demand)*fit_total)
+        return utility_fit
+
+@app.callback(
     Output("intermediate_df", "children"),
     [Input("submit-button", "n_clicks")],
     [
         State("demand", "value"),
         State("demand_growth", "value"),
-        State("eligible_re_2018", "value"),
+        State("new_re_input", "value"),
+        State("fit_MW", "value"),
         State("annual_rps_inc_2020", "value"),
         State("annual_rps_inc_2023", "value"),
         State("end_year", "value"),
     ])
-def df_initializer(n_clicks, demand, demand_growth, eligible_re_2018,annual_rps_inc_2020, annual_rps_inc_2023,
+def df_initializer(n_clicks, demand, demand_growth, new_re_input, fit_MW, annual_rps_inc_2020, annual_rps_inc_2023,
                             end_year):
-    demand = float(demand)
+
     demand_growth = float(demand_growth) / 100
-    eligible_re_2018 = float(eligible_re_2018)
     annual_rps_inc_2020 = float(annual_rps_inc_2020) / 100
     annual_rps_inc_2023 = float(annual_rps_inc_2023) / 100
     end_year = int(end_year) + 1
 
-    df = rps_df_maker(demand=demand, demand_growth=demand_growth, eligible_re_2018=eligible_re_2018,
+    df = rps_df_maker(demand=demand, demand_growth=demand_growth, new_re_input=new_re_input, fit_MW=fit_MW,
                     annual_rps_inc_2020=annual_rps_inc_2020, annual_rps_inc_2023=annual_rps_inc_2023,
                     end_year=end_year)
     df = round(df, 3)
@@ -600,7 +625,7 @@ def current_generation_updater(n_clicks, json, rows, columns):
     guess_solar = round(starting_demand * energy_mix_dict['Utility-Scale Solar'])
     guess_nem = round(starting_demand * energy_mix_dict['Net-Metering'])
     guess_geop = round(starting_demand * energy_mix_dict['GEOP'])
-    guess_fit = round(starting_demand * energy_mix_dict['Feed-in-Tariff'])
+    guess_fit = df['fit'][2018]
     guess_wind = round(starting_demand * energy_mix_dict['Wind'])
     guess_hydro = round(starting_demand * energy_mix_dict['Hydro'])
     guess_biomass = round(starting_demand * energy_mix_dict['Biomass'])
@@ -688,7 +713,7 @@ def html_REC_balance_table(json):
     df = pd.read_json(json)
     df['Year'] = df.index
     dfout = df[['Year','demand','rec_req','rec_balance','rec_change']]
-    dfout.columns = ['Year','Demand (MWh)','RPS Requirement (RECs/MWhs)','REC Balance (RECs)','REC Balance Change (RECs)']
+    dfout.columns = ['Year','Demand (MWh)','RPS Requirement','REC Balance','REC Balance Change']
     dfout = round(dfout, 0)
     dictout = dfout.to_dict('records')
     return dictout
@@ -783,7 +808,7 @@ def capacity_text_maker(json):
         Because different types of renewable generators produce electricity at different rates, or capacity factors, the amount of capacity
         needed to procure this many RECs varies by the type of renewable resource. 
         To meet the entirity of your DU's RPS requirement through {last_year}, you will need approximately **{solar_total} MW**
-        of new solar capacity with a 26% capacity factor. Or, around **{geothermal_total} MW** of geothermal, which has a higher capacity factor of 77%.
+        of new solar capacity with a 17% capacity factor. Or, around **{geothermal_total} MW** of geothermal, which has a higher capacity factor of 79%.
         """.replace('  ', '')
     else:
         out="""
@@ -951,7 +976,6 @@ def scenario_dict_maker(json, json2, desired_pct, scenario_tag):
     scenario_pct_dict = {
         'SUN':{'Utility-Scale Solar':1},
         'NEM':{'Net-Metering':0.5, 'GEOP':0.5},
-        'SUNALL':{'Utility-Scale Solar':0.34, 'Net-Metering':0.33, 'GEOP':0.33},
         'WND':{'Wind':1},
         'BIO':{'Biomass':1},
         'GEO':{'Geothermal':1},
@@ -987,7 +1011,7 @@ def scenario_dict_maker(json, json2, desired_pct, scenario_tag):
     end_re = lcoe_df.loc[lcoe_df['Source of Power'].isin(re_tech)]['future_generation'].sum()
     end_recs = end_re - (start_re - start_recs)
 
-    rps_min_increase = df['rec_req'].sum() / df['demand'].sum()
+    rps_min_increase = df['rps_marginal_req'].sum()
 
     #print(lcoe_df)
 
@@ -1090,7 +1114,7 @@ def economic_text_maker(json):
 
 
     out = f"""
-    One fact that is certain is the dramatic decline in cost of renewables. Since 2010, the average LCOE for solar has declined 72% from $0.36 (Php 18) to $0.10 (Php 2.5) per kWh.
+    One fact that is certain is the dramatic decline in cost of renewables. Since 2010, the average LCOE for solar has declined 72% from $0.36 (Php 18) to $0.10 (Php 5) per kWh.
     Wind's LCOE has declined 25% from $0.08 (Php 4) to $0.06 (Php 3) per kWh, while other technolgies like geothermal, biomass, and hydro have remained constant or seen slight increases in cost. **Any of these renewable resources are likely less expensive on a per kWh basis than coal or natural gas**. The Philippine's largest utility, MERALCO, reports that it pays over $0.12 (₱ 6) per kWh from coal generators, 
     while another utility, CEPALCO, reports paying over $0.16 (Php 8) per kWh for it's coal generation. For most utilities, the cost of natural gas is also high at an average of $0.11 (Php 5.5). 
 
@@ -1123,7 +1147,7 @@ def savings_text_maker(json):
     end_cost_kwh = round(end_cost / end_demand / 1000,1)
 
     out = f"""
-    ##### Your current generation costs are Php {start_cost}, or **Php {start_cost_kwh} / kWh**. By switching to **{int(end_re_pct * 100)}% renewables** in {input_dict['end_year']}, your generation costs would be Php {end_cost}, or **Php {end_cost_kwh} / kWh**. Currently you are creating {input_dict['start_recs']} RECS, and in 2030 you would be creating {int(input_dict['end_recs'])} RECs per year.
+    ##### Your current generation costs are Php {start_cost:,}, or **Php {start_cost_kwh} / kWh**. By switching to **{int(end_re_pct * 100)}% renewables** in {input_dict['end_year']}, your generation costs would be Php {end_cost:,}, or **Php {end_cost_kwh} / kWh**. Currently you are creating {input_dict['start_recs']:,} RECS, and in 2030 you would be creating {int(input_dict['end_recs']):,} RECs per year.
         """.replace('  ', '')
 
     return out
@@ -1141,7 +1165,8 @@ def desired_pct_updater(json, json2):
     start_re = lcoe_df.loc[lcoe_df['Source of Power'].isin(re_tech)]['Current Annual Generation from Source (MWh)'].sum()
     start_re_pct = start_re / lcoe_df['Current Annual Generation from Source (MWh)'].sum()
 
-    rps_min_increase = df['rec_req'].sum() / df['demand'].sum()
+    # rps_min_increase = df['rec_req'].sum() / df['demand'].sum()
+    rps_min_increase = df['rps_marginal_req'].sum()
     minimum_desired_pct = start_re_pct + rps_min_increase
 
     return minimum_desired_pct * 100
@@ -1154,12 +1179,12 @@ def goal_text_maker(json):
     
     input_dict = json_func.loads(json)
 
-    rps_min_increase = input_dict['rps_min_increase'] * 100
+    rps_min_increase = input_dict['rps_min_increase'] *100
 
 
     out = f"""
-    While the RPS will require your utility to increase your renewable energy penetration by {rps_min_increase}, it is likely cost-effective to go beyond this amount.
-    Additional renewable procurement will further decrease your reliance on import fossil-fuels with volitle proces and will make your customers happy to know they purchase
+    While the RPS will require your utility to increase your renewable energy penetration by {round(rps_min_increase,1)} percent, it is likely cost-effective to go beyond this amount.
+    Additional renewable procurement will further decrease your reliance on imported fossil-fuels with volitle proces and will make your customers happy to know they purchase
     their electricity from a proactive and forward-looking utility. Aditional renewables also allow you to bank RECs, which can be sold through the WESM as a secondary revenue stream,
     or held for future compliance years. 
 
