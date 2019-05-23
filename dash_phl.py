@@ -296,7 +296,6 @@ app.layout = html.Div([
 
         html.Div([
         html.Button(id="submit-button", n_clicks=0, children="Update Scenario", style={'color':'white','backgroundColor':'#ff8726'})
-        # daq.StopButton(id="submit-button", n_clicks=0, buttonText='Update Scenario', size = 180, children="Update Scenario")
         ],
         className = 'one columns',
         style={'margin-top':50}
@@ -492,8 +491,9 @@ html.Div([
         ),
 
         html.Div([
-            html.P("Your Utilities Desired Renewables Percent:"),
-            dcc.Slider(
+            html.P("Your Utilities Desired Renewables Percent:",
+            style={'margin-bottom':40}),
+            daq.Slider(
                 id='desired_pct',
                 min=10,
                 max=100,
@@ -505,7 +505,8 @@ html.Div([
                     60:{'label':'60%', 'style': {'color': '#77b0b1'}},
                     80:{'label':'80%', 'style': {'color': '#77b0b1'}},
                     100:{'label':'100%', 'style': {'color': '#77b0b1'}},
-                    })
+                    },
+                handleLabel={"showCurrentValue": True,"label": "PERCENT"})
                 ],
             className = 'four columns',
             style={'margin-top': 20}
@@ -1169,7 +1170,7 @@ def desired_pct_updater(json, json2):
     rps_min_increase = df['rps_marginal_req'].sum()
     minimum_desired_pct = start_re_pct + rps_min_increase
 
-    return minimum_desired_pct * 100
+    return int(minimum_desired_pct * 100)
     
 @app.callback(
     Output("goal_text","children"),
@@ -1196,4 +1197,4 @@ def goal_text_maker(json):
     return out
 
 if __name__ == "__main__":
-    app.run_server()
+    app.run_server(debug=True)
