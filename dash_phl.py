@@ -91,7 +91,7 @@ def rps_df_maker(demand, demand_growth, new_re_input, fit_MW,
     
 app = dash.Dash(__name__)
 
-app.title = 'CEIA RPS Calculators'
+app.title = 'CEIA RPS Calculator'
 
 server = app.server
 
@@ -106,29 +106,35 @@ app.layout = html.Div([
     html.Div(
         [
             html.H1(
-                'Philippines Renewable Portfolio Standard Planning Calculator [BETA]',
+                'Philippines Renewable Portfolio Standard Planning Calculator',
                 style={'font-family': 'Helvetica',
                        "margin-top": "25",
                        "margin-bottom": "0"},
                 className='nine columns',
             ),
-            html.Img(
-                src="https://cleanenergysolutions.org/sites/default/files/clean-energy-investment-accelerator-2-300x88.png",
-                className='one columns',
-                style={
-                    'height': '5%',
-                    'width': '15%',
-                    'float': 'right',
-                    'position': 'relative',
-                    'padding-top': 0,
-                    'padding-right': 0
-                },
-            ),
+            html.A([
+                html.Img(
+                    src="assets/CEIA_Header_Logo.png",
+                    className='two columns',
+                    style={
+                        'height': '20%',
+                        'width': '20%',
+                        'float': 'right',
+                        'position': 'relative',
+                        'padding-top': 10,
+                        'padding-right': 0
+                    },
+                )], href='https://www.cleanenergyinvest.org'),
+        ],
+        className='row',
+    ),
+    html.Div(
+        [
             html.H4(
                 'A decision support tool for renewable energy planning for distribution utilities and rural cooperatives.',
                 style={'font-family': 'Helvetica',
                        'position':'left',
-                       'width':'80%'},
+                       'width':'100%'},
                 className='twelve columns',
             ),
             dcc.Markdown("""
@@ -136,23 +142,25 @@ app.layout = html.Div([
                 *“biomass, waste to energy technology, wind, solar, run-of-river, impounding hydropower sources that meet internationally accepted standards, ocean, hybrid systems, 
                 geothermal and other RE technologies that may be later identified by the DOE."* 
                 
-                The RPS requires all utilities to increase their utilization of renewable energy by 1% of their total demand per year begining in 2020, although this number could increase in the future.
-                For many utilities, the lower costs and customer satisfaction withrenewables is encouraging adoption above what the RPS requires.
+                The RPS requires all utilities to increase their utilization of renewable energy by 1% of their total demand per year beginning in 2020, although this number could increase in the future.
+                For many utilities, the lower costs and higher customer satisfaction with renewables is encouraging adoption above what the RPS requires.
                 This calculator is designed to help utilities understand when they will need to procure additional renewable capacity, and how procuring additional renewables can result in cost savings.
                 """.replace('  ', ''),
-                # style={'font-family':'Helvetica','horizontalAlign':'left', 'font-size':18},
                 className='twelve columns',
             ),
         ],
         className='row',
     ),
 
+
 #Part 1
     html.Div(
         [
         
         html.Div([
-            html.Hr(id='hr1')
+            html.Img(
+                src='assets/Tricolor_Spacer_Wide.png',
+                className='twelve columns')
         ],
         className = 'twelve columns',
         style={'margin-left':'auto','margin-right':'auto'}
@@ -163,19 +171,18 @@ app.layout = html.Div([
                 'Part 1: Your RPS Requirements',
             )],
             className='twelve columns',
-            style={'margin-top':-40}),
+            style={'margin-top':0}),
 
         html.Div([
             dcc.Markdown("""
                     In this portion of the calculator, enter basic data about your utility such as your annual demand,
-                    and existing renewables. While RECs are created based on renewable generation (including line losses), RPS requirements are based on sales (demand).
-                    For the sake of simplicity, losses are ignored by this calculator, but consider them when deciding how much renewables you need to build. 
+                    and existing RPS eligible renewables. While RECs are created based on renewable generation (including line losses), RPS requirements are based on sales (demand).
+                    For the sake of simplicity, losses are ignored by this calculator, but you should consider them when deciding how much renewables you need to build. 
 
                     * Existing Eligible RE Annual Generation includes generation received from existing customer net-metering installations,
                     new power supply agreements, and other renewables owned or contracted by the utility which have been installed since 2008. Keep in mind that this number does not include *all* renewable power, such as renewables built before 2008. 
                     * The default Annual RPS Increment is 1% per year, although this is subject to change.
                     Other factors, such as elections in 2022 could also have an impact on this policy. Additionally, utilities often desire going beyond this requirement in order to convey to their customers that they are supporting renewable energy or to achieve cost savings.
-                    * Please contact the CEIA's in-country lead––Marlon Apanada––with any questions at [amj@allatropevc.com](amj@allatropevc.com)
             """.replace('  ',''))],
             # html.Ul([html.Li(x) for x in part_1_bullets])],
             className='twelve columns',
@@ -231,7 +238,7 @@ app.layout = html.Div([
         [
         html.Div([
             html.P("Annual Demand Growth:",
-            style={'margin-bottom':40}),
+            style={'margin-bottom':45}),
             daq.Slider(
                 id='demand_growth',
                 min=0,
@@ -254,18 +261,19 @@ app.layout = html.Div([
         
         html.Div([
             html.P("2020-2023 Annual Increment:",
-            style={'margin-bottom':40}),
+            style={'margin-bottom':45}),
             daq.Slider(
                 id='annual_rps_inc_2020',
                 min=0,
-                max=3,
+                max=10,
                 value=1,
-                step=0.25,
+                step=0.5,
                 marks={
                     0:{'label':'0%', 'style': {'color': '#77b0b1'}},
-                    1:{'label':'1%', 'style': {'color': '#77b0b1'}},
-                    2:{'label':'2%', 'style': {'color': '#77b0b1'}},
-                    3:{'label':'3%', 'style': {'color': '#77b0b1'}},
+                    2.5:{'label':'2.5%', 'style': {'color': '#77b0b1'}},
+                    5:{'label':'5%', 'style': {'color': '#77b0b1'}},
+                    7.5:{'label':'7.5%', 'style': {'color': '#77b0b1'}},
+                    10:{'label':'10%', 'style': {'color': '#77b0b1'}},
                     },
                 handleLabel={"showCurrentValue": True,"label": "PERCENT"})
                 ],
@@ -275,20 +283,21 @@ app.layout = html.Div([
 
         html.Div([
             html.P("2023-End Annual Increment:",
-            style={'margin-bottom':40}),
+            style={'margin-bottom':45}),
             daq.Slider(
                 id='annual_rps_inc_2023',
-                min=0,
-                max=3,
+                 min=0,
+                max=10,
                 value=1,
-                step=0.25,
+                step=0.5,
                 marks={
                     0:{'label':'0%', 'style': {'color': '#77b0b1'}},
-                    1:{'label':'1%', 'style': {'color': '#77b0b1'}},
-                    2:{'label':'2%', 'style': {'color': '#77b0b1'}},
-                    3:{'label':'3%', 'style': {'color': '#77b0b1'}},
+                    2.5:{'label':'2.5%', 'style': {'color': '#77b0b1'}},
+                    5:{'label':'5%', 'style': {'color': '#77b0b1'}},
+                    7.5:{'label':'7.5%', 'style': {'color': '#77b0b1'}},
+                    10:{'label':'10%', 'style': {'color': '#77b0b1'}},
                     },
-            handleLabel={"showCurrentValue": True,"label": "PERCENT"})
+                handleLabel={"showCurrentValue": True,"label": "PERCENT"})
                 ],
             className = 'three columns',
             style={'margin-top': 20}
@@ -338,7 +347,9 @@ className = 'row',
 html.Div([
 
     html.Div([
-        html.Hr(id='hr2')
+        html.Img(
+            src='assets/Tricolor_Spacer_Wide.png',
+            className='twelve columns')
     ],
     className = 'twelve columns',
     style={'margin-left':'auto','margin-right':'auto'}
@@ -349,7 +360,7 @@ html.Div([
             'Part 2: Future Capacity Needs'
     )],
     className='twelve columns',
-    style={'margin-top':-20}
+    style={'margin-top':0}
     ),
 
     html.Div([
@@ -376,7 +387,9 @@ html.Div([
 html.Div([
 
     html.Div([
-        html.Hr(id='hr3')
+        html.Img(
+            src='assets/Tricolor_Spacer_Wide.png',
+            className='twelve columns')
     ],
     className = 'twelve columns',
     style={'margin-left':'auto','margin-right':'auto'}
@@ -395,11 +408,11 @@ html.Div([
     Not only will additional renewables help you meet your RPS requirements while providing your customers with cleaner electricity, but renewables
     are now more cost-effective than fossil-fuel generators too. The International Renewable Energy Agency (IRENA) Tracks the annual benchmark Levelized Cost of Energy (LCOE)
     for various renewable technologies. An LCOE comprises the all-in cost of energy generation on a per kWh basis, for renewables this accounts for differences in equipment and installation costs, 
-    differences in resource capacity factor, and operations & maintence expenses. For fossil-fuel generators, the LCOE also includes the cost of fuel such as coal or natural gas,
-     which is often volitle in the Philippines. 
+    differences in resource capacity factor, and operations & maintenance expenses. For fossil-fuel generators, the LCOE also includes the cost of fuel such as coal or natural gas,
+     which is often volatile in the Philippines. 
 
-    IRENA's 2017 data suggests that the global LCOE for renewables ranges from $0.05 (Php 2.5) per kWh for hydro to $0.10 (Php 5) per kWh for solar installations. Keep in mind that these are median values,
-    and that ranges between the fifth and ninety-fifth percentile are displayed in the graph below. Also understand that some technologies, like geothermal or hydro might only be suitable for larger capacity installations,
+    IRENA's 2017 data suggests that the global LCOE for renewables ranges between $0.05 (Php 2.5) per kWh for hydro to $0.10 (Php 5) per kWh for solar installations. Keep in mind that these are median values, issuing a request for proposals (RFP) or working with a local developer are good ways to better understand what the exact costs will be for you. 
+    The graphs below display the median price, along with global prices between the fifth and ninety-fifth percentiles. Also understand that some technologies, like geothermal or hydro might only be suitable for larger capacity installations,
     while solar, biomass, and wind are more likely to be scalable to your custom capacity requirements. 
     """.replace('  ', ''))
     ],
@@ -448,21 +461,16 @@ html.Div([
         className = 'twelve columns',
         style={'margin-top':20}),
     ],
-    className='row'),
-
-    html.Div([
-            dcc.Markdown(id='savings_text')
-        ],
-        className = 'twelve columns',
-        style={'margin-top':0}),
-
+    className='row')
 ],
     className='row',
 ),
 
 html.Div([
     html.Div([
-        html.Hr(id='hr4')
+        html.Img(
+            src='assets/Tricolor_Spacer_Wide.png',
+            className='twelve columns')
     ],
     className = 'twelve columns',
     style={'margin-left':'auto','margin-right':'auto'}
@@ -478,6 +486,12 @@ html.Div([
 
     html.Div([
             dcc.Markdown(id='goal_text')
+        ],
+        className = 'twelve columns',
+        style={'margin-top':0}),
+
+    html.Div([
+            dcc.Markdown(id='savings_text')
         ],
         className = 'twelve columns',
         style={'margin-top':0}),
@@ -534,28 +548,64 @@ html.Div([
     className='row',
     ),
 
+html.Div([
+    html.Div([
+        html.Img(
+            src='assets/Tricolor_Spacer_Wide.png',
+            className='twelve columns')
+    ],
+    className = 'twelve columns',
+    style={'margin-left':'auto','margin-right':'auto'}
+    ),
+
+    html.Div([
+        dcc.Markdown(
+            """
+            ###### About the CEIA:
+            The CEIA is an innovative public-private partnership jointly led by Allotrope Partners, World Resources Institute,
+            and the U.S. National Renewable Energy Laboratory. Through targeted engagement in key countries,
+            the CEIA unlocks clean energy investment across commercial and industrial sectors.
+            The CEIA helps companies meet their clean energy targets and supports countries to meet their climate and development goals.
+            This includes implementation of Nationally Determined Contribution investment plans, long-term decarbonization strategies,
+            and broader efforts to meet growing energy needs and support strong economic growth.
+
+            Please contact the CEIA's in-country lead––Marlon Apanada––with any questions at [amj@allatropevc.com](amj@allatropevc.com)
+            """.replace('  ', '')
+        )],
+        className = 'twelve columns',
+        style={'margin-top':0}),
+
+    html.Div([
+        dcc.Markdown(
+            """
+            ###### References:
+            *More information on the RPS can be found in the following Department of Energy Circulars:*
+
+            * [Department of Energy. "Prescribing the Share of Renewable Energy Resources in the Country's Installed Capacity..." DC2015-07-0014. Published 2015.](https://www.doe.gov.ph/sites/default/files/pdf/issuances/dc_2015-07-0014.pdf)
+            * [Department of Energy. "Rules and Regulations Implementing Republic Act No.9513". DC2009-05-0008. Published 2009.](https://www.doe.gov.ph/sites/default/files/pdf/issuances/dc2009-05-0008.pdf)
+           
+           
+            *Additional program information from:*
+
+            * [CEIA. "Webinar on Philippine RE at the Crossroads." Presented January 2019.](https://www.youtube.com/watch?v=gd744nnvfWk)
 
 
-    # html.Div([
-    #             dash_table.DataTable(
-    #             id='desired_pct_table',
-    #             columns=[{'name':i, 'id':i} for i in dummy_desired_pct_df.columns],
-    #             data=dummy_desired_pct_df.to_dict('records'),
-    #             style_cell_conditional=[
-    #                 {
-    #             'if': {'column_id': c},
-    #             'textAlign': 'middle'
-    #                 } for c in ['Source of Power']
-    #             ],
-    #             style_as_list_view=True,
-    #             style_cell={'font-family': 'Helvetica', 'font-size':'115%', 'maxWidth':100,'whiteSpace':'normal'},
-    #             style_table={'max-height':550, 'overflowY':'scroll'},
-    #             editable=True
-    #             )
-    # ],
-    # className = 'six columns',
-    # style={'margin-top':60}
-    # ),
+            *LCOE data from:*
+
+            * [International Renewable Energy Agency (IRENA). "Renewable Power Generation Costs in 2017." Published 2018.](https://www.irena.org/-/media/Files/IRENA/Agency/Publication/2018/Jan/IRENA_2017_Power_Costs_2018.pdf)
+           
+
+            *Additional Price Data from:*
+
+            * Biomass Renewable Energy Alliance (BREA). "Biomass: Fueling the Economy of the Philippines". Presented March 2019.
+            
+            """.replace('  ', '')
+        )],
+        className = 'twelve columns',
+        style={'margin-top':0}),
+    ],
+    className='row',
+    ),
 
 ],
 className='row',
@@ -725,10 +775,9 @@ def html_REC_balance_table(json):
 )
 def df_capacity_updater(json):
     df = pd.read_json(json)
-
     def new_capacity_calc(row, capacity_factor):
-        mwh_need = row['rec_balance']
-        if mwh_need < 0:
+        mwh_need = row['rec_req']
+        if mwh_need > 0:
             mw_need = (abs(mwh_need) / 8760) / capacity_factor
             return mw_need
         else:
@@ -792,29 +841,31 @@ def capacity_text_maker(json):
     df = pd.read_json(json)
     first_year_of_need = df.rec_balance.lt(0).idxmax()
     last_year = max(df.index)
-    solar_total = round(df.solar_need.sum(),2)
-    geothermal_total = round(df.geothermal_need.sum(),2)
+    solar_total = round(list(df.solar_need)[-1],2)
+    geothermal_total = round(list(df.geothermal_need)[-1],2)
     total_recs = round(abs(df[df['rec_balance'] < 0]['rec_balance'].sum()),0)
     first_year_recs = round(df.loc[first_year_of_need, 'rec_balance'],0)
 
     if first_year_recs < 0: #make sure that any recs will be needed
         first_year_recs = abs(first_year_recs)
         out = f"""
-        Based on the inputed data, your utility will require new capacity by {first_year_of_need},
+        Based on the input data, your utility will require new capacity by {first_year_of_need},
         although contracting and construction both take time, so you should consider building renewables before they are needed. 
 
-        To meet the RPS, you need Renewable Energy Certificates (RECs), which represent 1 MWh of renewable generation. By 2030,
-        your utility needs to procure a total of **{total_recs}** RECs, starting with **{first_year_recs}** in {first_year_of_need}.
+        To meet the RPS, you need to procure and retire Renewable Energy Certificates (RECs). RECs each represent and contain the environmental attributes of 1 MWh of renewable generation. 
+        RECs can be created by developing additional renewables yourself, contracting renewable power from independent power producers and specifying that you would like to receive RECs, through customer programs like net metering or the Green Energy Option Program (GEOP), or by purchasing RECs
+        from the Wholesale Energy Market. 
+        By 2030, your utility needs to procure a total of **{int(total_recs):,}** RECs, starting with **{int(first_year_recs):,}** in {first_year_of_need}.
 
-        Because different types of renewable generators produce electricity at different rates, or capacity factors, the amount of capacity
+        Because different types of renewable generators produce electricity at different rates––or capacity factors––the amount of capacity
         needed to procure this many RECs varies by the type of renewable resource. 
-        To meet the entirity of your DU's RPS requirement through {last_year}, you will need approximately **{solar_total} MW**
+        To meet the entirety of your DU's RPS requirement through {last_year}, you will need approximately **{solar_total} MW**
         of new solar capacity with a 17% capacity factor. Or, around **{geothermal_total} MW** of geothermal, which has a higher capacity factor of 79%.
         """.replace('  ', '')
     else:
         out="""
         Your utility will not need any Renewable Energy Certificates (RECs) to meet the RPS under this scenario, 
-        but that does not mean that you still shouldn't consider installing additional renewable energy. Additional renewables can
+        but you should still consider installing additional renewable energy. Additional renewables can
         reduce your reliance on expensive imported fossil fuels, which will reduce your generation costs and rate volitility. 
         Customers will also be more likely to choose your service knowing that the power is clean. 
         """.replace('  ','')
@@ -973,6 +1024,7 @@ def scenario_dict_maker(json, json2, desired_pct, scenario_tag):
     start_re = lcoe_df.loc[lcoe_df['Source of Power'].isin(re_tech)]['Current Annual Generation from Source (MWh)'].sum()
     start_re_pct = round(start_re / start_demand,2)
     start_expense = round(lcoe_df['start_price'].sum(),0)
+    start_fossil = lcoe_df.loc[lcoe_df['Source of Power'].isin(fossil_tech)]['Current Annual Generation from Source (MWh)'].sum()
 
     scenario_pct_dict = {
         'SUN':{'Utility-Scale Solar':1},
@@ -981,13 +1033,11 @@ def scenario_dict_maker(json, json2, desired_pct, scenario_tag):
         'BIO':{'Biomass':1},
         'GEO':{'Geothermal':1},
         'HYDRO':{'Hydro':1},
-        'BAL':{'Utility-Scale Solar':0.15, 'Net-Metering':0.14, 'GEOP':0.14, 'Wind':0.14, 'Biomass':0.14, 'Geothermal':0.14, 'Hydro':0.14}
+        'BAL':{'Utility-Scale Solar':1/7, 'Net-Metering':1/7, 'GEOP':1/7, 'Wind':1/7, 'Biomass':1/7, 'Geothermal':1/7, 'Hydro':1/7}
     }
 
     new_re_need = (end_demand  * desired_pct) - start_re #include losses, because this is interms of generation pct, not RECS
-
-    fossil_need = end_demand - new_re_need - start_re
-
+    fossil_need = end_demand * (1-desired_pct)
     scenario = scenario_pct_dict[scenario_tag]
 
     lcoe_df['future_generation'] = 0
@@ -997,11 +1047,13 @@ def scenario_dict_maker(json, json2, desired_pct, scenario_tag):
             lcoe_df.loc[lcoe_df['Source of Power'] == f, 'future_generation'] = (scenario[f] * new_re_need) + current_gen_f
         else:
             lcoe_df.loc[lcoe_df['Source of Power'] == f, 'future_generation'] = current_gen_f
+
+
     
     for f in fossil_tech:
-        current_pct_f = lcoe_df[lcoe_df['Source of Power'] == f]['Current Annual Generation from Source (MWh)'][0:1].item() / lcoe_df['Current Annual Generation from Source (MWh)'].sum()
+        current_pct_f = lcoe_df[lcoe_df['Source of Power'] == f]['Current Annual Generation from Source (MWh)'][0:1].item() / start_fossil
         lcoe_df.loc[lcoe_df['Source of Power'] == f, 'future_generation'] = fossil_need * current_pct_f
-    
+
     lcoe_df['future_price'] = lcoe_df['Levelized Cost of Energy (₱ / kWh)'] * lcoe_df['future_generation'] * 1000
     end_expense = round(lcoe_df['future_price'].sum(),0)
 
@@ -1034,6 +1086,9 @@ def scenario_dict_maker(json, json2, desired_pct, scenario_tag):
     output_dict['techs'] = techs
     output_dict['rps_min_increase'] = rps_min_increase
 
+    total_gen = sum(end_generation_list)
+    end_gen_pct = [round(i/total_gen,2) for i in end_generation_list]
+    end_gen_dict = dict(zip(techs, end_gen_pct))
     return json_func.dumps(output_dict)
 
 @app.callback(Output('doughnut_graph', 'figure'),
@@ -1069,10 +1124,10 @@ def doughnut_graph(json):
                                 ]},
             domain={"column": 0},
             textinfo='none',
-            hole = 0.4,
+            hole = 0.55,
             hoverinfo = 'label+percent',
             sort=False,
-            title=f"{input_dict['start_year']} <br>{int(input_dict['start_re_pct'] * 100)}% Renewables")
+            title=f"{input_dict['start_year']}<br>{int(input_dict['start_re_pct'] * 100)}% Renewables")
     
     end = go.Pie(
             labels=techs,
@@ -1090,7 +1145,7 @@ def doughnut_graph(json):
                                 ]},
             domain={"column": 1},
             textinfo='none',
-            hole=0.4,
+            hole=0.55,
             hoverinfo = 'label+percent',
             sort=False,
             title=f"{input_dict['end_year']} Power Mix<br>{int(input_dict['end_re_pct'] * 100)}% Renewables")
@@ -1115,17 +1170,17 @@ def economic_text_maker(json):
 
 
     out = f"""
-    One fact that is certain is the dramatic decline in cost of renewables. Since 2010, the average LCOE for solar has declined 72% from $0.36 (Php 18) to $0.10 (Php 5) per kWh.
-    Wind's LCOE has declined 25% from $0.08 (Php 4) to $0.06 (Php 3) per kWh, while other technolgies like geothermal, biomass, and hydro have remained constant or seen slight increases in cost. **Any of these renewable resources are likely less expensive on a per kWh basis than coal or natural gas**. The Philippine's largest utility, MERALCO, reports that it pays over $0.12 (₱ 6) per kWh from coal generators, 
+    The IRENA LCOE data informs us that the price of renewables has declined dramatically in recent years. Since 2010, the average LCOE for solar has declined 72% from $0.36 (Php 18) to $0.10 (Php 5) per kWh.
+    Over the same time period, wind's LCOE has declined 25% from $0.08 (Php 4) to $0.06 (Php 3) per kWh, while other technologies like geothermal, biomass, and hydro have remained constant or seen slight increases in cost. Any of these renewable resources are likely less expensive on a per kWh basis than coal or natural gas**. The Philippine's largest utility, MERALCO, reports that it pays over $0.12 (Php 6) per kWh from coal generators, 
     while another utility, CEPALCO, reports paying over $0.16 (Php 8) per kWh for it's coal generation. For most utilities, the cost of natural gas is also high at an average of $0.11 (Php 5.5). 
 
-    The *Levelized Cost of Energy (₱ / kWh)* column in the table to the right is pre-populated with average values. You can edit this column to reflect prices that are specific to your utility. 
+    The Levelized Cost of Energy (PhP / kWh) column in the table to the right is pre-populated with average values. You can edit this column to reflect prices that are specific to your utility. 
     Based on the current entries, the cost of utility-scale solar for you is **Php {round(solar_cost - coal_cost, 1)} / kWh** compared with the cost of coal generation,
-    and the cost of biomass has a difference of **Php {round(biomass_cost - coal_cost, 1)} / kWh**. In the next column, *Current Annual Generation from Source (MWh)*, you can input the number of MWhs your utility currently
-    procures from each source of power. The default values are based on the demand you entered above, scaled to the proportional Philippine's energy mix. Please enter exact values in this column if possible. 
+    and the cost of biomass has a difference of **Php {round(biomass_cost - coal_cost, 1)} / kWh**. In the next column, Current Annual Generation from Source (MWh), you can input the number of MWhs your utility currently
+    procures from each source of power. The default values are based on the demand you entered above, scaled to be proportional with the Philippine's national energy mix. Please enter exact values in this column if possible. 
 
-    Finally, consider the economics of programs such as solar net-metering and the new Green Energy Option Program (GEOP), which allow customers to build their own renewables while providing the utility with RECs. 
-    In some cases, these programs offer utilities the least-expensive method of procuring new RECs.
+    Finally, consider the economics of programs such as solar net-metering and the new GEOP, which allow customers to build their own renewables while providing the utility with RECs. 
+    In some cases, these programs offer utilities the least-expensive method of procuring new RECs as the customer pays for the entire system cost, while the utility receives all RECs. 
    """.replace('  ', '')
 
     return out
@@ -1139,13 +1194,13 @@ def savings_text_maker(json):
 
     start_cost = int(input_dict['start_expense'])
     start_demand = input_dict['start_demand']
-    start_cost_kwh = round(start_cost / start_demand / 1000,1)
+    start_cost_kwh = round(start_cost / start_demand / 1000,2)
 
     end_re_pct = input_dict['end_re_pct']
 
     end_cost = input_dict['end_expense']
     end_demand = input_dict['end_demand']
-    end_cost_kwh = round(end_cost / end_demand / 1000,1)
+    end_cost_kwh = round(end_cost / end_demand / 1000,2)
 
     out = f"""
     ##### Your current generation costs are Php {start_cost:,}, or **Php {start_cost_kwh} / kWh**. By switching to **{int(end_re_pct * 100)}% renewables** in {input_dict['end_year']}, your generation costs would be Php {end_cost:,}, or **Php {end_cost_kwh} / kWh**. Currently you are creating {input_dict['start_recs']:,} RECS, and in 2030 you would be creating {int(input_dict['end_recs']):,} RECs per year.
@@ -1185,8 +1240,8 @@ def goal_text_maker(json):
 
     out = f"""
     While the RPS will require your utility to increase your renewable energy penetration by {round(rps_min_increase,1)} percent, it is likely cost-effective to go beyond this amount.
-    Additional renewable procurement will further decrease your reliance on imported fossil-fuels with volitle proces and will make your customers happy to know they purchase
-    their electricity from a proactive and forward-looking utility. Aditional renewables also allow you to bank RECs, which can be sold through the WESM as a secondary revenue stream,
+    Additional renewable procurement will further decrease your reliance on imported fossil-fuels with volatile process and will make your customers happy to know they purchase
+    their electricity from a proactive and forward-looking utility. Additional renewables also allow you to bank RECs, which can be sold through the WESM as a secondary revenue stream,
     or held for future compliance years. 
 
     Using the slider below, you can change the desired percentage of renewables for your utility. This has been preset at the minimum RPS requirement created by the policy scenario input in Part 1. 
