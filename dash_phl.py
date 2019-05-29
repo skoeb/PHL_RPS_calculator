@@ -85,8 +85,6 @@ def rps_df_maker(demand, demand_growth, new_re_input, fit_MW,
     df['rec_change'] = (df['fit'] + df['existing_re']) - df['rec_req']
     df['rec_balance'] = df['rec_change'].cumsum()
 
-    print(df)
-
     return df
     
 app = dash.Dash(__name__)
@@ -1252,4 +1250,4 @@ def goal_text_maker(json):
     return out
 
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run_server(debug=False)
