@@ -589,7 +589,7 @@ html.Div([
                     'height': '13px',
                     'width': '13px',
                     'padding-left': 10},
-                title='Amount of total electricity that could be produced by renewables'
+                title='This value can reflect your RPS goal, incremental RPS targests, or any other aspirational RE percentages'
                 ),            
             daq.Slider(
                 id='desired_pct',
@@ -1238,7 +1238,7 @@ def doughnut_graph(json):
 
     traces = [start, end]
 
-    layout = go.Layout(autosize = True, grid={"rows": 1, "columns": 2},showlegend=True, title=f"Current Power Mix and in {input_dict['end_year']} Scenario")
+    layout = go.Layout(autosize = True, grid={"rows": 1, "columns": 2},showlegend=True, title=f"Current Power Mix & {input_dict['end_year']} Scenario")
     fig = go.Figure(data = traces, layout = layout)
 
     return fig
@@ -1332,7 +1332,7 @@ def goal_text_maker(json):
 
     Using the slider below, you can change the desired percentage of renewables for your utility. This has been preset at the minimum RPS requirement created by the policy scenario input in Part 1. 
     Below the slider, you can also select the mix of renewables that will be installed. As you change the desired renewable percentage and the mix of new renewables, the price per kWh above and the energy mix
-    displayed in the doughnut-charts below will change. 
+    displayed in the doughnut-charts below will change. These prices are derived from the LCOE values specified in the Advanced Input Option table in Part 3. 
    """.replace('  ', '')
 
     return out
