@@ -226,7 +226,7 @@ app.layout = html.Div([
                     'padding-left': 10},
                 title='2018 megawatt sales'
                 ),
-            dcc.Input(id="demand", value=418355, type="number")
+            dcc.Input(id="demand", value=418355, type="number",style={'width':'100%'}) #this works RE: 
                 ],
             className = 'three columns',
             style={'margin-top': 20}
@@ -243,7 +243,7 @@ app.layout = html.Div([
                     'padding-left': 10},
                 title='XXXX'
                 ),            
-            dcc.Input(id="fit_MW", value=12942, type="number")
+            dcc.Input(id="fit_MW", value=12942, type="number",style={'width':'100%'})
                 ],
             className = 'three columns',
             style={'margin-top': 20}
@@ -260,7 +260,7 @@ app.layout = html.Div([
                     'padding-left': 10},
                 title='Amount of RE currently produced'
                 ),            
-            dcc.Input(id="new_re_input", value=0, type="number")
+            dcc.Input(id="new_re_input", value=0, type="number",style={'width':'100%'})
                 ], 
             className = 'three columns',
             style={'margin-top': 20}
@@ -306,7 +306,7 @@ app.layout = html.Div([
                     'padding-left': 10},
                 title='Percent change in electricity sales by year'
                 ),            
-            dcc.Input(id='demand_growth',value=5.75,type='number',step=0.05)
+            dcc.Input(id='demand_growth',value=5.75,type='number',step=0.05,style={'width':'100%'})
                 ],
             className='three columns',
             style={'margin-top': 20}
@@ -337,7 +337,9 @@ app.layout = html.Div([
                     7.5:{'label':'7.5%', 'style': {'color': '#77b0b1'}},
                     10:{'label':'10%', 'style': {'color': '#77b0b1'}},
                     },
-                handleLabel={"showCurrentValue": True,"label": "PERCENT"})
+                handleLabel={"showCurrentValue": True,"label": "PERCENT"},
+                size={'width':'100%'} #resizes to window
+                )
                 ],
             className = 'three columns',
             style={'margin-top': 20}
@@ -368,10 +370,12 @@ app.layout = html.Div([
                     7.5:{'label':'7.5%', 'style': {'color': '#77b0b1'}},
                     10:{'label':'10%', 'style': {'color': '#77b0b1'}},
                     },
-                handleLabel={"showCurrentValue": True,"label": "PERCENT"})
+                handleLabel={"showCurrentValue": True,"label": "PERCENT"},
+                size={'width':'100%'} #resizes to window
+                )
                 ],
             className = 'three columns',
-            style={'margin-top': 20}
+            style={'margin-top': 20,}
         ),
 
         html.Div([
@@ -600,7 +604,9 @@ html.Div([
                     80:{'label':'80%', 'style': {'color': '#77b0b1'}},
                     100:{'label':'100%', 'style': {'color': '#77b0b1'}},
                     },
-                handleLabel={"showCurrentValue": True,"label": "PERCENT"})
+                handleLabel={"showCurrentValue": True,"label": "PERCENT"},
+                size={'width':'100%'} #resizes to window
+                )
                 ],
             className = 'four columns',
             style={'margin-top': 20}
