@@ -203,9 +203,7 @@ app.layout = html.Div([
                 style={
                     'height': '13px',
                     'width': '13px',
-                    'padding-top': 0,
-                    'padding-left': 10,
-                    'display':'inline-block'},
+                    'padding-left': 10},
                 title='Date to achieve RE integration goals set by RPS mandate'
                 ),            
             dcc.Dropdown(
@@ -218,7 +216,16 @@ app.layout = html.Div([
         ),
 
         html.Div([
-            html.P("Demand Annual (MWh):"),
+            html.P("Demand Annual (MWh):",style={'display':'inline-block'}),
+            #added question-mark 
+            html.Img(
+                src="assets/question_mark.png",
+                style={
+                    'height': '13px',
+                    'width': '13px',
+                    'padding-left': 10},
+                title='2018 megawatt sales'
+                ),
             dcc.Input(id="demand", value=418355, type="number")
                 ],
             className = 'three columns',
@@ -226,7 +233,16 @@ app.layout = html.Div([
         ),
 
         html.Div([
-            html.P("FiT Allocation (MWh):"),
+            html.P("RECs Allocated from FiT (MWh)",style={'display':'inline-block'}),
+            #added question mark
+            html.Img(
+                src="assets/question_mark.png",
+                style={
+                    'height': '13px',
+                    'width': '13px',
+                    'padding-left': 10},
+                title='XXXX'
+                ),            
             dcc.Input(id="fit_MW", value=12942, type="number")
                 ],
             className = 'three columns',
@@ -234,7 +250,16 @@ app.layout = html.Div([
         ),
 
         html.Div([
-            html.P("Existing Eligible RE (MWh):"),
+            html.P("Existing Eligible RE (MWh):",style={'display':'inline-block'}),
+            #added question mark
+            html.Img(
+                src="assets/question_mark.png",
+                style={
+                    'height': '13px',
+                    'width': '13px',
+                    'padding-left': 10},
+                title='Amount of RE currently produced'
+                ),            
             dcc.Input(id="new_re_input", value=0, type="number")
                 ], 
             className = 'three columns',
@@ -271,16 +296,34 @@ app.layout = html.Div([
 #        ),
 
         html.Div([
-            html.P("Annual Demand Growth:"),
+            html.P("Annual Demand Growth (%):",style={'display':'inline-block'}),
+            #added question mark
+            html.Img(
+                src="assets/question_mark.png",
+                style={
+                    'height': '13px',
+                    'width': '13px',
+                    'padding-left': 10},
+                title='Percent change in electricity sales by year'
+                ),            
             dcc.Input(id='demand_growth',value=5.75,type='number',step=0.05)
                 ],
-            className='three-columns',
-            style={'margin-top': 40}
+            className='three columns',
+            style={'margin-top': 20}
         ),
 
         html.Div([
             html.P("2020-2023 Annual Increment:",
-            style={'margin-bottom':45}),
+            style={'margin-bottom':45,'display':'inline-block'}),
+            #added question mark
+            html.Img(
+                src="assets/question_mark.png",
+                style={
+                    'height': '13px',
+                    'width': '13px',
+                    'padding-left': 10},
+                title='Percent of total RE that must be added each year leading up to 2023'
+                ),            
             daq.Slider(
                 id='annual_rps_inc_2020',
                 min=0,
@@ -302,7 +345,16 @@ app.layout = html.Div([
 
         html.Div([
             html.P("2023-End Annual Increment:",
-            style={'margin-bottom':45}),
+            style={'margin-bottom':45,'display':'inline-block'}),
+            #added question mark
+            html.Img(
+                src="assets/question_mark.png",
+                style={
+                    'height': '13px',
+                    'width': '13px',
+                    'padding-left': 10},
+                title='Percent of total RE that must be added each year leading up to the RPS end year'
+                ),            
             daq.Slider(
                 id='annual_rps_inc_2023',
                  min=0,
@@ -326,11 +378,11 @@ app.layout = html.Div([
         html.Button(id="submit-button", n_clicks=0, children="Update Scenario", style={'color':'white','backgroundColor':'#ff8726'})
         ],
         className = 'one columns',
-        style={'margin-top':50}
+        style={'margin-top':20}
         ),
-
     ],
-        className = 'row'
+        className = 'row',
+        style={'alignVertical':True}
     ),
 
 html.Div([
@@ -524,8 +576,17 @@ html.Div([
         ),
 
         html.Div([
-            html.P("Your Utilities Desired Renewables Percent:",
-            style={'margin-bottom':40}),
+            html.P("Your Utilities' Desired Renewables Percent:",
+            style={'margin-bottom':40,'display':'inline-block'}),
+            #added question mark
+            html.Img(
+                src="assets/question_mark.png",
+                style={
+                    'height': '13px',
+                    'width': '13px',
+                    'padding-left': 10},
+                title='Amount of total electricity that could be produced by renewables'
+                ),            
             daq.Slider(
                 id='desired_pct',
                 min=10,
