@@ -196,7 +196,18 @@ app.layout = html.Div([
     html.Div(
         [
         html.Div([
-            html.P("End Year of RPS:"),
+            html.P("End Year of RPS:", style={'display':'inline-block'}),
+            #added question-mark 
+            html.Img(
+                src="assets/question_mark.png",
+                style={
+                    'height': '13px',
+                    'width': '13px',
+                    'padding-top': 0,
+                    'padding-left': 10,
+                    'display':'inline-block'},
+                title='Date to achieve RE integration goals set by RPS mandate'
+                ),            
             dcc.Dropdown(
                 id='end_year',
                 options=[{'label':i, 'value': i} for i in range(2030,2051,5)],
@@ -236,29 +247,37 @@ app.layout = html.Div([
 
     html.Div(
         [
+#        html.Div([
+#            html.P("Annual Demand Growth:",
+#            style={'margin-bottom':45}),
+#            daq.Slider(
+#                id='demand_growth',
+#                min=0,
+#                max=15,
+#                value=5.75,
+#                step=0.25,
+#                marks={
+#                    0:{'label':'0%', 'style': {'color': '#77b0b1'}},
+#                    3:{'label':'3%', 'style': {'color': '#77b0b1'}},
+#                    6:{'label':'6%', 'style': {'color': '#77b0b1'}},
+#                    9:{'label':'9%', 'style': {'color': '#77b0b1'}},
+#                    12:{'label':'12%', 'style': {'color': '#77b0b1'}},
+#                    15:{'label':'15%', 'style': {'color': '#77b0b1'}}
+#                    },
+#                handleLabel={"showCurrentValue": True,"label": "PERCENT"})
+#                ],
+#            className = 'three columns',
+#            style={'margin-top': 20}
+#        ),
+
         html.Div([
-            html.P("Annual Demand Growth:",
-            style={'margin-bottom':45}),
-            daq.Slider(
-                id='demand_growth',
-                min=0,
-                max=15,
-                value=5.75,
-                step=0.25,
-                marks={
-                    0:{'label':'0%', 'style': {'color': '#77b0b1'}},
-                    3:{'label':'3%', 'style': {'color': '#77b0b1'}},
-                    6:{'label':'6%', 'style': {'color': '#77b0b1'}},
-                    9:{'label':'9%', 'style': {'color': '#77b0b1'}},
-                    12:{'label':'12%', 'style': {'color': '#77b0b1'}},
-                    15:{'label':'15%', 'style': {'color': '#77b0b1'}}
-                    },
-                handleLabel={"showCurrentValue": True,"label": "PERCENT"})
+            html.P("Annual Demand Growth:"),
+            dcc.Input(id='demand_growth',value=5.75,type='number',step=0.05)
                 ],
-            className = 'three columns',
-            style={'margin-top': 20}
+            className='three-columns',
+            style={'margin-top': 40}
         ),
-        
+
         html.Div([
             html.P("2020-2023 Annual Increment:",
             style={'margin-bottom':45}),
@@ -424,13 +443,13 @@ html.Div([
         html.Div([
             dcc.Markdown(id="economic_text", children=["init"])
         ],
-        className = 'seven columns',
+        className = 'six columns',
         style={'margin-top':20}
         ),
 
         html.Div([
-                html.H5('Update the LCOE and MWh numbers here:'),
-
+                html.H5('Advanced Input Option:',style={'font-weight':'bold'}),
+                dcc.Markdown('Input custom values for the LCOE and MWh numbers by double clicking on individual cells.'),
                 dash_table.DataTable(
                 id='lcoe_table',
                 columns=[{'name':i, 'id':i} for i in dummy_lcoe_df.columns],
@@ -447,7 +466,7 @@ html.Div([
                 editable=True
                 )
         ],
-        className = 'five columns',
+        className = 'six columns',
         style={'margin-top':20}
         ),
     ],
