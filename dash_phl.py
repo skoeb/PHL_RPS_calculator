@@ -11,6 +11,8 @@ import pandas as pd
 import plotly.tools as tls
 import json as json_func
 
+
+#this is austen's branch
 dummy_df = pd.read_csv('dummy_df.csv')
 dummy_df['Year'] = dummy_df.index
 dummy_df_display = dummy_df[['Year','demand','rec_req','rec_balance','rec_change']]
@@ -194,7 +196,12 @@ app.layout = html.Div([
     html.Div(
         [
         html.Div([
-            html.P("End Year of RPS:"),
+            html.P("End Year of RPS:", style={'display':'inline-block'}),
+            #added question-mark 
+            html.Div([
+                ' \u003f\u20dd',
+                html.Span('Under current law, the RPS will expire in 2030, however this could be extended.'
+                , className="tooltiptext")], className="tooltip", style={'padding-left':5}),
             dcc.Dropdown(
                 id='end_year',
                 options=[{'label':i, 'value': i} for i in range(2030,2051,5)],
@@ -205,24 +212,39 @@ app.layout = html.Div([
         ),
 
         html.Div([
-            html.P("Demand Annual (MWh):"),
-            dcc.Input(id="demand", value=418355, type="number")
+            html.P("Annual Demand (MWh):",style={'display':'inline-block'}),
+            #added question-mark 
+            html.Div([
+                ' \u003f\u20dd',
+                html.Span('Annual demand is equal to total electricity sales, this does not include line losses.'
+                , className="tooltiptext")], className="tooltip", style={'padding-left':5}),
+            dcc.Input(id="demand", value=418355, type="number",style={'width':'100%'}) #this works RE: 
                 ],
             className = 'three columns',
             style={'margin-top': 20}
         ),
 
         html.Div([
-            html.P("FiT Allocation (MWh):"),
-            dcc.Input(id="fit_MW", value=12942, type="number")
+            html.P("RECs from FiT (MWh):",style={'display':'inline-block'}),
+            #added question-mark 
+            html.Div([
+                '\u003f\u20dd',
+                html.Span('Under the 2008 RE Law, RECs from customer-subsidized feed-in-tariff projects are allocated to each utility for 3% of their demand'
+                , className="tooltiptext")], className="tooltip", style={'padding-left':5}),
+            dcc.Input(id="fit_MW", value=12942, type="number",style={'width':'100%'})
                 ],
             className = 'three columns',
             style={'margin-top': 20}
         ),
 
         html.Div([
-            html.P("Existing Eligible RE (MWh):"),
-            dcc.Input(id="new_re_input", value=0, type="number")
+            html.P("Existing Eligible RE (MWh):",style={'display':'inline-block'}),
+            #added question-mark 
+            html.Div([
+                '\u003f\u20dd',
+                html.Span('Eligible sources of RE include those built after 2008, and not receiving a feed in tariff. Please ensure that your utility is receiving the RECs from these projects.' 
+                , className="tooltiptext")], className="tooltip", style={'padding-left':5}),
+            dcc.Input(id="new_re_input", value=0, type="number",style={'width':'100%'})
                 ], 
             className = 'three columns',
             style={'margin-top': 20}
@@ -234,70 +256,68 @@ app.layout = html.Div([
 
     html.Div(
         [
+#        html.Div([
+#            html.P("Annual Demand Growth:",
+#            style={'margin-bottom':45}),
+#            daq.Slider(
+#                id='demand_growth',
+#                min=0,
+#                max=15,
+#                value=5.75,
+#                step=0.25,
+#                marks={
+#                    0:{'label':'0%', 'style': {'color': '#77b0b1'}},
+#                    3:{'label':'3%', 'style': {'color': '#77b0b1'}},
+#                    6:{'label':'6%', 'style': {'color': '#77b0b1'}},
+#                    9:{'label':'9%', 'style': {'color': '#77b0b1'}},
+#                    12:{'label':'12%', 'style': {'color': '#77b0b1'}},
+#                    15:{'label':'15%', 'style': {'color': '#77b0b1'}}
+#                    },
+#                handleLabel={"showCurrentValue": True,"label": "PERCENT"})
+#                ],
+#            className = 'three columns',
+#            style={'margin-top': 20}
+#        ),
+
         html.Div([
-            html.P("Annual Demand Growth:",
-            style={'margin-bottom':45}),
-            daq.Slider(
-                id='demand_growth',
-                min=0,
-                max=15,
-                value=5.75,
-                step=0.25,
-                marks={
-                    0:{'label':'0%', 'style': {'color': '#77b0b1'}},
-                    3:{'label':'3%', 'style': {'color': '#77b0b1'}},
-                    6:{'label':'6%', 'style': {'color': '#77b0b1'}},
-                    9:{'label':'9%', 'style': {'color': '#77b0b1'}},
-                    12:{'label':'12%', 'style': {'color': '#77b0b1'}},
-                    15:{'label':'15%', 'style': {'color': '#77b0b1'}}
-                    },
-                handleLabel={"showCurrentValue": True,"label": "PERCENT"})
+            html.P("Annual Demand Growth (%):",
+            style={'display':'inline-block'}),
+            #added question-mark 
+            html.Div([
+                '\u003f\u20dd',
+                html.Span('The rate of electricity growth in your utility service territory, this rate will be applied to the inputed annual demand.'
+                , className="tooltiptext")], className="tooltip", style={'padding-left':5}),        
+            dcc.Input(id='demand_growth',value=6.3,type='number',step=0.05,style={'width':'100%'})
                 ],
-            className = 'three columns',
-            style={'margin-top': 20}
-        ),
-        
-        html.Div([
-            html.P("2020-2023 Annual Increment:",
-            style={'margin-bottom':45}),
-            daq.Slider(
-                id='annual_rps_inc_2020',
-                min=0,
-                max=10,
-                value=1,
-                step=0.5,
-                marks={
-                    0:{'label':'0%', 'style': {'color': '#77b0b1'}},
-                    2.5:{'label':'2.5%', 'style': {'color': '#77b0b1'}},
-                    5:{'label':'5%', 'style': {'color': '#77b0b1'}},
-                    7.5:{'label':'7.5%', 'style': {'color': '#77b0b1'}},
-                    10:{'label':'10%', 'style': {'color': '#77b0b1'}},
-                    },
-                handleLabel={"showCurrentValue": True,"label": "PERCENT"})
-                ],
-            className = 'three columns',
+            className='three columns',
             style={'margin-top': 20}
         ),
 
         html.Div([
-            html.P("2023-End Annual Increment:",
-            style={'margin-bottom':45}),
-            daq.Slider(
-                id='annual_rps_inc_2023',
-                 min=0,
-                max=10,
-                value=1,
-                step=0.5,
-                marks={
-                    0:{'label':'0%', 'style': {'color': '#77b0b1'}},
-                    2.5:{'label':'2.5%', 'style': {'color': '#77b0b1'}},
-                    5:{'label':'5%', 'style': {'color': '#77b0b1'}},
-                    7.5:{'label':'7.5%', 'style': {'color': '#77b0b1'}},
-                    10:{'label':'10%', 'style': {'color': '#77b0b1'}},
-                    },
-                handleLabel={"showCurrentValue": True,"label": "PERCENT"})
+            html.P("2020-23 RPS Increment (%):",
+            style={'display':'inline-block'}),
+            #added question mark
+            html.Div([
+                '\u003f\u20dd',
+                html.Span('The annual marginal increase of the RPS requirement, the current law requires 1%, however this could be increased in the future.'
+                , className="tooltiptext")], className="tooltip", style={'padding-left':5}),        
+            dcc.Input(id='annual_rps_inc_2020',value=1,type='number',step=0.1,style={'width':'100%'})
                 ],
-            className = 'three columns',
+            className='three columns',
+            style={'margin-top': 20}
+        ),
+
+        html.Div([
+            html.P("2023-End Increment (%):",
+            style={'display':'inline-block'}),
+            #added question mark
+            html.Div([
+                '\u003f\u20dd',
+                html.Span('The annual marginal increase of the RPS requirement, the current law requires 1%, however this could be increased in the future.'
+                , className="tooltiptext")], className="tooltip", style={'padding-left':5}),        
+            dcc.Input(id='annual_rps_inc_2023',value=1,type='number',step=0.1,style={'width':'100%'})
+                ],
+            className='three columns',
             style={'margin-top': 20}
         ),
 
@@ -305,11 +325,11 @@ app.layout = html.Div([
         html.Button(id="submit-button", n_clicks=0, children="Update Scenario", style={'color':'white','backgroundColor':'#ff8726'})
         ],
         className = 'one columns',
-        style={'margin-top':50}
+        style={'margin-top':50, 'margin-left':60}
         ),
-
     ],
-        className = 'row'
+        className = 'row',
+        style={'alignVertical':True}
     ),
 
 html.Div([
@@ -320,7 +340,7 @@ html.Div([
     style={'margin-top':'60px'}),
 
     html.Div([
-       dash_table.DataTable(
+        dash_table.DataTable(
             id='demand_and_REC_table',
             columns=[{'name':i, 'id':i} for i in dummy_df_display.columns],
             data=dummy_df_display.to_dict('records'),
@@ -331,14 +351,22 @@ html.Div([
                 } for c in ['Year']
             ],
             style_as_list_view=True,
-            style_cell={'font-family': 'Helvetica', 'font-size':'115%', 'maxWidth':100,'whiteSpace':'normal'},
-            style_table={'max-height':550, 'overflowY':'scroll'}
-            )
-    ],
-    className = 'six columns',
+            style_cell={'font-family': 'Helvetica', 'font-size':'90%', 'textAlign':'center', 'maxWidth':100,'whiteSpace':'normal'},
+            style_table={'max-height':550, 'overflowY':'scroll'},
+            style_data_conditional=[
+                    {
+                    'if': {'row_index':'odd'},
+                    'backgroundColor':'rgb(248, 248, 248)'
+                    }
+                ],
+            style_header={
+                'backgroundColor':'rgb(230, 230, 230)',
+                'fontWeight': 'bold'
+                }),
+        ],
+    className='six columns',
     style={'margin-top':60}),
-
-],
+    ],
 className = 'row',
 ),
 
@@ -422,13 +450,13 @@ html.Div([
         html.Div([
             dcc.Markdown(id="economic_text", children=["init"])
         ],
-        className = 'seven columns',
+        className = 'six columns',
         style={'margin-top':20}
         ),
 
         html.Div([
-                html.H5('Update the LCOE and MWh numbers here:'),
-
+                html.H5('Advanced Input Option:',style={'font-weight':'bold'}),
+                dcc.Markdown('Input custom values for the LCOE and MWh numbers by double clicking on individual cells.'),
                 dash_table.DataTable(
                 id='lcoe_table',
                 columns=[{'name':i, 'id':i} for i in dummy_lcoe_df.columns],
@@ -445,7 +473,7 @@ html.Div([
                 editable=True
                 )
         ],
-        className = 'five columns',
+        className = 'six columns',
         style={'margin-top':20}
         ),
     ],
@@ -503,14 +531,19 @@ html.Div([
         ),
 
         html.Div([
-            html.P("Your Utilities Desired Renewables Percent:",
-            style={'margin-bottom':40}),
+            html.P("Desired Renewables Percent:",
+            style={'margin-bottom':40,'display':'inline-block'}),
+            #added question-mark 
+            html.Div([
+                ' \u003f\u20dd',
+                html.Span('This value can reflect your RPS goal, incremental RPS targests, or any other aspirational RE percentages.'
+                , className="tooltiptext")], className="tooltip", style={'padding-left':5}),        
             daq.Slider(
                 id='desired_pct',
                 min=10,
                 max=100,
                 value=30,
-                step=1,
+                step=0.5,
                 marks={
                     20:{'label':'20%', 'style': {'color': '#77b0b1'}},
                     40:{'label':'40%', 'style': {'color': '#77b0b1'}},
@@ -518,7 +551,9 @@ html.Div([
                     80:{'label':'80%', 'style': {'color': '#77b0b1'}},
                     100:{'label':'100%', 'style': {'color': '#77b0b1'}},
                     },
-                handleLabel={"showCurrentValue": True,"label": "PERCENT"})
+                handleLabel={"showCurrentValue": True,"label": "PERCENT"},
+                size={'width':'100%'} #resizes to window
+                )
                 ],
             className = 'four columns',
             style={'margin-top': 20}
@@ -1150,7 +1185,7 @@ def doughnut_graph(json):
 
     traces = [start, end]
 
-    layout = go.Layout(autosize = True, grid={"rows": 1, "columns": 2},showlegend=True, title=f"Current Power Mix and in {input_dict['end_year']} Scenario")
+    layout = go.Layout(autosize = True, grid={"rows": 1, "columns": 2},showlegend=True, title=f"Current Power Mix & {input_dict['end_year']} Scenario")
     fig = go.Figure(data = traces, layout = layout)
 
     return fig
@@ -1244,10 +1279,10 @@ def goal_text_maker(json):
 
     Using the slider below, you can change the desired percentage of renewables for your utility. This has been preset at the minimum RPS requirement created by the policy scenario input in Part 1. 
     Below the slider, you can also select the mix of renewables that will be installed. As you change the desired renewable percentage and the mix of new renewables, the price per kWh above and the energy mix
-    displayed in the doughnut-charts below will change. 
+    displayed in the doughnut-charts below will change. These prices are derived from the LCOE values specified in the Advanced Input Option table in Part 3. 
    """.replace('  ', '')
 
     return out
 
 if __name__ == "__main__":
-    app.run_server(debug=False)
+    app.run_server(debug=True)
