@@ -198,14 +198,10 @@ app.layout = html.Div([
         html.Div([
             html.P("End Year of RPS:", style={'display':'inline-block'}),
             #added question-mark 
-            html.Img(
-                src="assets/question_mark.png",
-                style={
-                    'height': '13px',
-                    'width': '13px',
-                    'padding-left': 10},
-                title='Date to achieve RE integration goals set by RPS mandate'
-                ),            
+            html.Div([
+                ' \u003f\u20dd',
+                html.Span('Under current law, the RPS will expire in 2030, however this could be extended.'
+                , className="tooltiptext")], className="tooltip", style={'padding-left':5}),
             dcc.Dropdown(
                 id='end_year',
                 options=[{'label':i, 'value': i} for i in range(2030,2051,5)],
@@ -216,16 +212,12 @@ app.layout = html.Div([
         ),
 
         html.Div([
-            html.P("Demand Annual (MWh):",style={'display':'inline-block'}),
+            html.P("Annual Demand (MWh):",style={'display':'inline-block'}),
             #added question-mark 
-            html.Img(
-                src="assets/question_mark.png",
-                style={
-                    'height': '13px',
-                    'width': '13px',
-                    'padding-left': 10},
-                title='2018 megawatt sales'
-                ),
+            html.Div([
+                ' \u003f\u20dd',
+                html.Span('Annual demand is equal to total electricity sales, this does not include line losses.'
+                , className="tooltiptext")], className="tooltip", style={'padding-left':5}),
             dcc.Input(id="demand", value=418355, type="number",style={'width':'100%'}) #this works RE: 
                 ],
             className = 'three columns',
@@ -233,16 +225,12 @@ app.layout = html.Div([
         ),
 
         html.Div([
-            html.P("RECs Allocated from FiT (MWh)",style={'display':'inline-block'}),
-            #added question mark
-            html.Img(
-                src="assets/question_mark.png",
-                style={
-                    'height': '13px',
-                    'width': '13px',
-                    'padding-left': 10},
-                title='XXXX'
-                ),            
+            html.P("RECs from FiT (MWh):",style={'display':'inline-block'}),
+            #added question-mark 
+            html.Div([
+                '\u003f\u20dd',
+                html.Span('Under the 2008 RE Law, RECs from customer-subsidized feed-in-tariff projects are allocated to each utility for 3% of their demand'
+                , className="tooltiptext")], className="tooltip", style={'padding-left':5}),
             dcc.Input(id="fit_MW", value=12942, type="number",style={'width':'100%'})
                 ],
             className = 'three columns',
@@ -251,15 +239,11 @@ app.layout = html.Div([
 
         html.Div([
             html.P("Existing Eligible RE (MWh):",style={'display':'inline-block'}),
-            #added question mark
-            html.Img(
-                src="assets/question_mark.png",
-                style={
-                    'height': '13px',
-                    'width': '13px',
-                    'padding-left': 10},
-                title='Amount of RE currently produced'
-                ),            
+            #added question-mark 
+            html.Div([
+                '\u003f\u20dd',
+                html.Span('Eligible sources of RE include those built after 2008, and not receiving a feed in tariff. Please ensure that your utility is receiving the RECs from these projects.' 
+                , className="tooltiptext")], className="tooltip", style={'padding-left':5}),
             dcc.Input(id="new_re_input", value=0, type="number",style={'width':'100%'})
                 ], 
             className = 'three columns',
@@ -296,93 +280,52 @@ app.layout = html.Div([
 #        ),
 
         html.Div([
-            html.P("Annual Demand Growth (%):",style={'display':'inline-block'}),
-            #added question mark
-            html.Img(
-                src="assets/question_mark.png",
-                style={
-                    'height': '13px',
-                    'width': '13px',
-                    'padding-left': 10},
-                title='Percent change in electricity sales by year'
-                ),            
-            dcc.Input(id='demand_growth',value=5.75,type='number',step=0.05,style={'width':'100%'})
+            html.P("Annual Demand Growth (%):",
+            style={'display':'inline-block'}),
+            #added question-mark 
+            html.Div([
+                '\u003f\u20dd',
+                html.Span('The rate of electricity growth in your utility service territory, this rate will be applied to the inputed annual demand.'
+                , className="tooltiptext")], className="tooltip", style={'padding-left':5}),        
+            dcc.Input(id='demand_growth',value=6.3,type='number',step=0.05,style={'width':'100%'})
                 ],
             className='three columns',
             style={'margin-top': 20}
         ),
 
         html.Div([
-            html.P("2020-2023 Annual Increment:",
-            style={'margin-bottom':45,'display':'inline-block'}),
+            html.P("2020-23 RPS Increment (%):",
+            style={'display':'inline-block'}),
             #added question mark
-            html.Img(
-                src="assets/question_mark.png",
-                style={
-                    'height': '13px',
-                    'width': '13px',
-                    'padding-left': 10},
-                title='Percent of total RE that must be added each year leading up to 2023'
-                ),            
-            daq.Slider(
-                id='annual_rps_inc_2020',
-                min=0,
-                max=10,
-                value=1,
-                step=0.5,
-                marks={
-                    0:{'label':'0%', 'style': {'color': '#77b0b1'}},
-                    2.5:{'label':'2.5%', 'style': {'color': '#77b0b1'}},
-                    5:{'label':'5%', 'style': {'color': '#77b0b1'}},
-                    7.5:{'label':'7.5%', 'style': {'color': '#77b0b1'}},
-                    10:{'label':'10%', 'style': {'color': '#77b0b1'}},
-                    },
-                handleLabel={"showCurrentValue": True,"label": "PERCENT"},
-                size={'width':'100%'} #resizes to window
-                )
+            html.Div([
+                '\u003f\u20dd',
+                html.Span('The annual marginal increase of the RPS requirement, the current law requires 1%, however this could be increased in the future.'
+                , className="tooltiptext")], className="tooltip", style={'padding-left':5}),        
+            dcc.Input(id='annual_rps_inc_2020',value=1,type='number',step=0.1,style={'width':'100%'})
                 ],
-            className = 'three columns',
+            className='three columns',
             style={'margin-top': 20}
         ),
 
         html.Div([
-            html.P("2023-End Annual Increment:",
-            style={'margin-bottom':45,'display':'inline-block'}),
+            html.P("2023-End Increment (%):",
+            style={'display':'inline-block'}),
             #added question mark
-            html.Img(
-                src="assets/question_mark.png",
-                style={
-                    'height': '13px',
-                    'width': '13px',
-                    'padding-left': 10},
-                title='Percent of total RE that must be added each year leading up to the RPS end year'
-                ),            
-            daq.Slider(
-                id='annual_rps_inc_2023',
-                 min=0,
-                max=10,
-                value=1,
-                step=0.5,
-                marks={
-                    0:{'label':'0%', 'style': {'color': '#77b0b1'}},
-                    2.5:{'label':'2.5%', 'style': {'color': '#77b0b1'}},
-                    5:{'label':'5%', 'style': {'color': '#77b0b1'}},
-                    7.5:{'label':'7.5%', 'style': {'color': '#77b0b1'}},
-                    10:{'label':'10%', 'style': {'color': '#77b0b1'}},
-                    },
-                handleLabel={"showCurrentValue": True,"label": "PERCENT"},
-                size={'width':'100%'} #resizes to window
-                )
+            html.Div([
+                '\u003f\u20dd',
+                html.Span('The annual marginal increase of the RPS requirement, the current law requires 1%, however this could be increased in the future.'
+                , className="tooltiptext")], className="tooltip", style={'padding-left':5}),        
+            dcc.Input(id='annual_rps_inc_2023',value=1,type='number',step=0.1,style={'width':'100%'})
                 ],
-            className = 'three columns',
-            style={'margin-top': 20,}
+            className='three columns',
+            style={'margin-top': 20}
         ),
 
         html.Div([
         html.Button(id="submit-button", n_clicks=0, children="Update Scenario", style={'color':'white','backgroundColor':'#ff8726'})
         ],
         className = 'one columns',
-        style={'margin-top':20}
+        style={'margin-top':50, 'margin-left':60}
         ),
     ],
         className = 'row',
@@ -397,7 +340,7 @@ html.Div([
     style={'margin-top':'60px'}),
 
     html.Div([
-       dash_table.DataTable(
+        dash_table.DataTable(
             id='demand_and_REC_table',
             columns=[{'name':i, 'id':i} for i in dummy_df_display.columns],
             data=dummy_df_display.to_dict('records'),
@@ -408,14 +351,22 @@ html.Div([
                 } for c in ['Year']
             ],
             style_as_list_view=True,
-            style_cell={'font-family': 'Helvetica', 'font-size':'115%', 'maxWidth':100,'whiteSpace':'normal'},
-            style_table={'max-height':550, 'overflowY':'scroll'}
-            )
-    ],
-    className = 'six columns',
+            style_cell={'font-family': 'Helvetica', 'font-size':'90%', 'textAlign':'center', 'maxWidth':100,'whiteSpace':'normal'},
+            style_table={'max-height':550, 'overflowY':'scroll'},
+            style_data_conditional=[
+                    {
+                    'if': {'row_index':'odd'},
+                    'backgroundColor':'rgb(248, 248, 248)'
+                    }
+                ],
+            style_header={
+                'backgroundColor':'rgb(230, 230, 230)',
+                'fontWeight': 'bold'
+                }),
+        ],
+    className='six columns',
     style={'margin-top':60}),
-
-],
+    ],
 className = 'row',
 ),
 
@@ -580,23 +531,19 @@ html.Div([
         ),
 
         html.Div([
-            html.P("Your Utilities' Desired Renewables Percent:",
+            html.P("Desired Renewables Percent:",
             style={'margin-bottom':40,'display':'inline-block'}),
-            #added question mark
-            html.Img(
-                src="assets/question_mark.png",
-                style={
-                    'height': '13px',
-                    'width': '13px',
-                    'padding-left': 10},
-                title='This value can reflect your RPS goal, incremental RPS targests, or any other aspirational RE percentages'
-                ),            
+            #added question-mark 
+            html.Div([
+                ' \u003f\u20dd',
+                html.Span('This value can reflect your RPS goal, incremental RPS targests, or any other aspirational RE percentages.'
+                , className="tooltiptext")], className="tooltip", style={'padding-left':5}),        
             daq.Slider(
                 id='desired_pct',
                 min=10,
                 max=100,
                 value=30,
-                step=1,
+                step=0.5,
                 marks={
                     20:{'label':'20%', 'style': {'color': '#77b0b1'}},
                     40:{'label':'40%', 'style': {'color': '#77b0b1'}},
