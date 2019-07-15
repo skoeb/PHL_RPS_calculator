@@ -11,8 +11,6 @@ import pandas as pd
 import plotly.tools as tls
 import json as json_func
 
-
-#this is austen's branch
 dummy_df = pd.read_csv('dummy_df.csv')
 dummy_df['Year'] = dummy_df.index
 dummy_df_display = dummy_df[['Year','demand','rec_req','rec_balance','rec_change']]
@@ -28,6 +26,9 @@ energy_mix_df = energy_mix_df.set_index('resource', drop=True)
 energy_mix_dict = energy_mix_df.to_dict()['pct']
 
 dummy_desired_pct_df = pd.read_csv("dummy_desired_pct.csv")
+
+utility_df = pd.read_csv("utility_data.csv", index_col='utility')
+utility_dict = utility_df[~utility_df.index.duplicated(keep='first')].to_dict('index')
 
 color_dict = {
     'biomass':('#00b159'),
@@ -193,69 +194,129 @@ app.layout = html.Div([
     ),
 
 #Selectors
-    html.Div(
-        [
-        html.Div([
-            html.P("End Year of RPS:", style={'display':'inline-block'}),
-            #added question-mark 
-            html.Div([
-                ' \u003f\u20dd',
-                html.Span('Under current law, the RPS will expire in 2030, however this could be extended.'
-                , className="tooltiptext")], className="tooltip", style={'padding-left':5}),
-            dcc.Dropdown(
-                id='end_year',
-                options=[{'label':i, 'value': i} for i in range(2030,2051,5)],
-                value=2030)
-                ],
-            className = 'three columns',
-            style={'margin-top': 20}
-        ),
+    html.Div([
+            dcc.Tabs(id='utility_inputs', value='acronym', parent_className='custom-tabs', className='custom-tabs-container',
+                children=[
 
-        html.Div([
-            html.P("Annual Demand (MWh):",style={'display':'inline-block'}),
-            #added question-mark 
-            html.Div([
-                ' \u003f\u20dd',
-                html.Span('Annual demand is equal to total electricity sales, this does not include line losses.'
-                , className="tooltiptext")], className="tooltip", style={'padding-left':5}),
-            dcc.Input(id="demand", value=418355, type="number",style={'width':'100%'}) #this works RE: 
-                ],
-            className = 'three columns',
-            style={'margin-top': 20}
-        ),
+                dcc.Tab(label='Automatic Utility Data Lookup', className='custom-tab', selected_className='custom-tab--selected', value='acronym',
+                    children=[
+                            html.Div([
+                                html.Div([
+                                    html.P("Enter Utility Acronym:",style={'display':'inline-block'}),
+                                    #added question-mark 
+                                    html.Div([
+                                        ' \u003f\u20dd',
+                                        html.Span('When a utility name (acronym) is selected, data such as annual demand, demand growth, and FiT allocation are automatically loaded from a 2017 DOE Database.'
+                                        , className="tooltiptext")], className="tooltip", style={'padding-left':5}),
+                                    dcc.Dropdown(
+                                        id='utility_name',
+                                        options=[{'label':i, 'value':i} for i in list(utility_dict.keys())],
+                                        multi=False,
+                                        value='MERALCO',
+                                    )
+                                ])
+                            ], style={'margin-top': 30, 'margin-bottom':30})
+                        ]),
 
-        html.Div([
-            html.P("RECs from FiT (MWh):",style={'display':'inline-block'}),
-            #added question-mark 
-            html.Div([
-                '\u003f\u20dd',
-                html.Span('Under the 2008 RE Law, RECs from customer-subsidized feed-in-tariff projects are allocated to each utility for 3% of their demand'
-                , className="tooltiptext")], className="tooltip", style={'padding-left':5}),
-            dcc.Input(id="fit_MW", value=12942, type="number",style={'width':'100%'})
-                ],
-            className = 'three columns',
-            style={'margin-top': 20}
-        ),
+                dcc.Tab(label='Manual Utility Data Input (Advanced)', className='custom-tab', selected_className='custom-tab--selected', value='manual',
+                        children=[
+                            html.Div([
+                                html.Div([
+                                    html.P("Annual Demand (MWh):",style={'display':'inline-block'}),
+                                    #added question-mark 
+                                    html.Div([
+                                        ' \u003f\u20dd',
+                                        html.Span('Annual demand is equal to total electricity sales, this does not include line losses.'
+                                        , className="tooltiptext")], className="tooltip", style={'padding-left':5}),
+                                    dcc.Input(id="demand", value=418355, type="number",style={'width':'100%'}) #this works RE: 
+                                        ],
+                                    className = 'four columns',
+                                ),
 
-        html.Div([
-            html.P("Existing Eligible RE (MWh):",style={'display':'inline-block'}),
-            #added question-mark 
-            html.Div([
-                '\u003f\u20dd',
-                html.Span('Eligible sources of RE include those built after 2008, and not receiving a feed in tariff. Please ensure that your utility is receiving the RECs from these projects.' 
-                , className="tooltiptext")], className="tooltip", style={'padding-left':5}),
-            dcc.Input(id="new_re_input", value=0, type="number",style={'width':'100%'})
-                ], 
-            className = 'three columns',
-            style={'margin-top': 20}
-        )
-        ], 
-    className = 'row',
-    style={'alignVertical':True}
-    ),
+                                html.Div([
+                                    html.P("RECs from FiT (MWh):",style={'display':'inline-block'}),
+                                    #added question-mark 
+                                    html.Div([
+                                        '\u003f\u20dd',
+                                        html.Span('Under the 2008 RE Law, RECs from customer-subsidized feed-in-tariff projects are allocated to each utility for 3% of their demand'
+                                        , className="tooltiptext")], className="tooltip", style={'padding-left':5}),
+                                    dcc.Input(id="fit_MW", value=12942, type="number",style={'width':'100%'})
+                                        ],
+                                    className = 'four columns',
+                                ),
 
-    html.Div(
-        [
+                                html.Div([
+                                    html.P("Annual Demand Growth (%):",
+                                    style={'display':'inline-block'}),
+                                    #added question-mark 
+                                    html.Div([
+                                        '\u003f\u20dd',
+                                        html.Span('The rate of electricity growth in your utility service territory, this rate will be applied to the inputed annual demand.'
+                                        , className="tooltiptext")], className="tooltip", style={'padding-left':5}),        
+                                    dcc.Input(id='demand_growth',value=6.3,type='number',step=0.05,style={'width':'100%'})
+                                        ],
+                                    className='four columns',
+                                ),
+                            ], style={'margin-top':30, 'margin-bottom':126}) #not entirely sure why this is precisely 126, but it is so that tab lengths are even
+                        ]),
+                ]),
+        
+        html.Div([
+
+            html.Div([
+                html.P("End Year of RPS:", style={'display':'inline-block'}),
+                #added question-mark 
+                html.Div([
+                    ' \u003f\u20dd',
+                    html.Span('Under current law, the RPS will expire in 2030, however this could be extended.'
+                    , className="tooltiptext")], className="tooltip", style={'padding-left':5}),
+                dcc.Dropdown(
+                    id='end_year',
+                    options=[{'label':i, 'value': i} for i in range(2030,2051,5)],
+                    value=2030)
+                    ],
+                className = 'four columns',
+                # style={'margin-top': 20}
+            ),
+
+            html.Div([
+                html.P("2020-23 RPS Increment (%):",
+                style={'display':'inline-block'}),
+                #added question mark
+                html.Div([
+                    '\u003f\u20dd',
+                    html.Span('The annual marginal increase of the RPS requirement, the current law requires 1%, however this could be increased in the future.'
+                    , className="tooltiptext")], className="tooltip", style={'padding-left':5}),        
+                dcc.Input(id='annual_rps_inc_2020',value=1,type='number',step=0.1,style={'width':'100%'})
+                    ],
+                className='four columns',
+                # style={'margin-top': 20}
+            ),
+
+            html.Div([
+                html.P("2023-End Increment (%):",
+                style={'display':'inline-block'}),
+                #added question mark
+                html.Div([
+                    '\u003f\u20dd',
+                    html.Span('The annual marginal increase of the RPS requirement, the current law requires 1%, however this could be increased in the future.'
+                    , className="tooltiptext")], className="tooltip", style={'padding-left':5}),        
+                dcc.Input(id='annual_rps_inc_2023',value=1,type='number',step=0.1,style={'width':'100%'})
+                    ],
+                className='four columns',
+                # style={'margin-top': 20}
+            ),
+        ],
+        className='input_box',
+        style={'margin-top':30},
+        ), 
+
+    # className = 'row',
+    # style={'alignVertical':True}
+    # ),
+
+    # html.Div(
+    #     [
 #        html.Div([
 #            html.P("Annual Demand Growth:",
 #            style={'margin-bottom':45}),
@@ -279,47 +340,7 @@ app.layout = html.Div([
 #            style={'margin-top': 20}
 #        ),
 
-        html.Div([
-            html.P("Annual Demand Growth (%):",
-            style={'display':'inline-block'}),
-            #added question-mark 
-            html.Div([
-                '\u003f\u20dd',
-                html.Span('The rate of electricity growth in your utility service territory, this rate will be applied to the inputed annual demand.'
-                , className="tooltiptext")], className="tooltip", style={'padding-left':5}),        
-            dcc.Input(id='demand_growth',value=6.3,type='number',step=0.05,style={'width':'100%'})
-                ],
-            className='three columns',
-            style={'margin-top': 20}
-        ),
 
-        html.Div([
-            html.P("2020-23 RPS Increment (%):",
-            style={'display':'inline-block'}),
-            #added question mark
-            html.Div([
-                '\u003f\u20dd',
-                html.Span('The annual marginal increase of the RPS requirement, the current law requires 1%, however this could be increased in the future.'
-                , className="tooltiptext")], className="tooltip", style={'padding-left':5}),        
-            dcc.Input(id='annual_rps_inc_2020',value=1,type='number',step=0.1,style={'width':'100%'})
-                ],
-            className='three columns',
-            style={'margin-top': 20}
-        ),
-
-        html.Div([
-            html.P("2023-End Increment (%):",
-            style={'display':'inline-block'}),
-            #added question mark
-            html.Div([
-                '\u003f\u20dd',
-                html.Span('The annual marginal increase of the RPS requirement, the current law requires 1%, however this could be increased in the future.'
-                , className="tooltiptext")], className="tooltip", style={'padding-left':5}),        
-            dcc.Input(id='annual_rps_inc_2023',value=1,type='number',step=0.1,style={'width':'100%'})
-                ],
-            className='three columns',
-            style={'margin-top': 20}
-        ),
 
         html.Div([
         html.Button(id="submit-button", n_clicks=0, children="Update Scenario", style={'color':'white','backgroundColor':'#ff8726'})
@@ -331,6 +352,19 @@ app.layout = html.Div([
         className = 'row',
         style={'alignVertical':True}
     ),
+
+    html.Div([
+        html.P("Existing Eligible RE (MWh):",style={'display':'inline-block'}),
+        #added question-mark 
+        html.Div([
+            '\u003f\u20dd',
+            html.Span('Eligible sources of RE include those built after 2008, and not receiving a feed in tariff. Please ensure that your utility is receiving the RECs from these projects.' 
+            , className="tooltiptext")], className="tooltip", style={'padding-left':5}),
+        dcc.Input(id="new_re_input", value=0, type="number",style={'width':'100%'})
+            ], 
+        className = 'three columns',
+        style={'margin-top': 20}
+        ),
 
 html.Div([
     html.Div([
@@ -665,6 +699,29 @@ def fit_mw_updater(demand):
         fit_total = 3264621
         utility_fit = round((float(demand)/national_demand)*fit_total)
         return utility_fit
+
+"""
+UPDATERS FOR UTILITY NAME INPUT
+"""
+@app.callback(
+    Output("demand","value"),
+    [Input("utility_name","value")]
+)
+def demand_mw_updater(utility):
+    output = utility_dict[utility]['sales']
+    print(utility, output)
+    return output
+
+@app.callback(
+    Output("demand_growth","value"),
+    [Input("utility_name","value")]
+)
+def growth_mw_updater(utility):
+    output = utility_dict[utility]['growth_floor'] * 100 #scaled to 100
+    print(utility, output)
+    return output
+
+    
 
 @app.callback(
     Output("intermediate_df", "children"),
@@ -1285,4 +1342,4 @@ def goal_text_maker(json):
     return out
 
 if __name__ == "__main__":
-    app.run_server(debug=False)
+    app.run_server(debug=True)

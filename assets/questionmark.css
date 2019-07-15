@@ -7,7 +7,7 @@
 /* Tooltip text */
 .tooltip .tooltiptext {
   visibility: hidden;
-  width: 120px;
+  width: 200px;
   bottom: 100%;
   left: 50%;
   margin-left: -60px;
