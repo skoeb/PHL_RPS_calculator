@@ -1,13 +1,12 @@
-﻿resource,pct
-Coal,0.39
-Natural Gas,0.20
-Oil,0.06
-WESM,0.10
-GEOP,0.00
-Feed-in-Tariff,0.03093569
-Net-Metering,0.00
-Utility-Scale Solar,0.00
-Wind,0.01
-Biomass,0.00
-Geothermal,0.12
-Hydro,0.09
+﻿Generation Source,Levelized Cost of Energy (₱ / kWh),Percent of Utility Energy Mix
+Coal,6.5,0.41
+Natural Gas,5.5,0.21
+Oil,12,0.06
+WESM Purchases,10,0.10
+Biomass,3.5,0.00
+Geothermal,3.5,0.12
+Hydro,2.5,0.09
+Wind,3,0.01
+Utility-Scale Solar,5,0.00
+GEOP,0,0.00
+Net-Metering,5.5,0.00
