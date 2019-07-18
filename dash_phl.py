@@ -371,7 +371,7 @@ app.layout = html.Div([
                                     #added question mark
                                     html.Div([
                                         '\u003f\u20dd',
-                                        html.Span('Capacity factor is a percentage value that represents the actual generation potential of a resource type. It is calculated by dividing the total anticipated generation from a resource for a time period, over the total amount that would be generated if the resource is available at full nameplate capacity for the same time period. Resources such as the Renewable Eenrgy Data Explorer and the System Advisor Model (SAM) can help you determine renewable capacity factors for your area.'
+                                        html.Span('Capacity factor is a percentage value that represents the actual generation potential of a resource type. It is calculated by dividing the total anticipated generation from a resource for a time period, over the total amount that would be generated if the resource is available at full nameplate capacity for the same time period. Resources such as the Renewable Energy Data Explorer and the System Advisor Model (SAM) can help you determine renewable capacity factors for your area.'
                                         , className="tooltiptext")], className="tooltip", style={'padding-left':5}),
                                 ],
                                 className='twelve columns',
@@ -1016,7 +1016,7 @@ html.Div([
                 This includes implementation of Nationally Determined Contribution investment plans, long-term decarbonization strategies,
                 and broader efforts to meet growing energy needs and support strong economic growth.
 
-                Please contact the CEIA's in-country lead––Marlon Apanada––with any questions at [amj@allatropevc.com](amj@allatropevc.com)
+                Please contact the CEIA's in-country lead––Marlon Apanada––with any questions at [amj@allotropepartners.com](amj@allotropepartners.com)
                 """.replace('  ', '')),
         ],
         className='row'),
