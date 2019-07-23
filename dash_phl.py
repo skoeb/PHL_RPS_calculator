@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import dash
 import dash_table
 import dash_daq as daq
@@ -14,7 +16,7 @@ import json as json_func
 dummy_df = pd.read_csv('dummy_df.csv')
 dummy_df['Year'] = dummy_df.index
 dummy_df_display = dummy_df[['Year','demand','rec_req','rec_balance','rec_change']]
-dummy_df_display.columns = ['Year','Demand (MWh)','RPS Requirement','REC Balance','REC Balance Change']
+dummy_df_display.columns = ['Year','Total Energy Sales (MWh)','RPS Requirement','REC Balance','REC Balance Change']
 
 irena_lcoe_df = pd.read_csv("irena_lcoe.csv")
 irena_lcoe_df = irena_lcoe_df.dropna(subset = ['Technology'])
@@ -37,17 +39,17 @@ re_tech = ['Utility-Scale Solar','Net-Metering','GEOP','Wind','Geothermal','Biom
 fossil_tech = ['Coal', 'Natural Gas','Oil', 'WESM Purchases']
 
 color_dict = {
-    'biomass':('#00b159'),
-    'geothermal':('#d11141'),
-    'wind':('#00aedb'),
-    'solar':('#ffc425'),
-    'distributed PV':('#FFE896'),
-    'utility-scale solar':('#ffc425'),
-    'other':('#f37735'),
-    'hydro':('#115CBF'),
-    'coal':('#222222'),
-    'natural gas':('#DE8F6E'),
-    'wesm':('#004777')
+    'Biomass':('#00b159'),
+    'Geothermal':('#d11141'),
+    'Wind':('#00aedb'),
+    'Solar':('#ffc425'),
+    'Distributed PV':('#FFE896'),
+    'Utility-Scale Solar':('#ffc425'),
+    'Other':('#f37735'),
+    'Hydro':('#115CBF'),
+    'Coal':('#222222'),
+    'Natural Gas':('#DE8F6E'),
+    'WESM':('#004777')
 }
 
 
@@ -180,10 +182,10 @@ app.layout = html.Div([
                     *“biomass, waste to energy technology, wind, solar, run-of-river, impounding hydropower sources that meet internationally accepted standards, ocean, hybrid systems, 
                     geothermal and other RE technologies that may be later identified by the DOE."* 
                     
-                    The RPS requires all utilities to increase their utilization of renewable energy by 1% of their total demand (kWh) per year beginning in 2020. Although this percentage can be increased in the future by the National Renewable Energy Board.
-                    For many utilities, the lower costs and higher customer satisfaction with renewables is encouraging adoption above what the RPS requires. This calculator is designed to help utilities understand when they will need to procure additional renewable capacity, and how procuring additional renewables can result in cost savings.
+                    The RPS requires all utilities to increase their utilization of renewable energy by 1% of their total energy sales (kWh) each year beginning in 2020, although this percentage can be increased in the future by the National Renewable Energy Board.
+                    For many utilities, the lower costs and higher customer satisfaction with renewables is encouraging adoption above what the RPS requires. This calculator is designed to help utilities understand when they will need to procure additional renewable capacity, and how procuring additional renewables could result in cost savings.
 
-                    Click through the tabs below to input data for your utility, more details about each input can be found by hovering your mouse over the circled question-mark symbols.
+                    Click through the tabs below to input data for your utility. More details about each input can be found by hovering your mouse over the circled question-mark symbols.
                     """.replace('  ', ''),
                     className='twelve columns',
                 ),
@@ -204,7 +206,7 @@ app.layout = html.Div([
                                     #added question-mark 
                                     html.Div([
                                         ' \u003f\u20dd',
-                                        html.Span('When a utility name (acronym) is selected, data such as annual demand, demand growth, and FiT allocation are automatically loaded from a 2017 DOE Database.'
+                                        html.Span('When a utility name (acronym) is selected, data such as annual energy sales, demand growth, and FiT allocation are automatically loaded from a 2017 DOE Database. Users can overwrite this data in the Manual Utility Data Input tab.'
                                         , className="tooltiptext")], className="tooltip", style={'padding-left':5}),
                                     dcc.Dropdown(
                                         id='utility_name',
@@ -379,7 +381,7 @@ app.layout = html.Div([
 
                                 html.Div([
                                     html.Div([
-                                        html.P("Solar Capacity Factor:",
+                                        html.P("Utility-Scale Solar Capacity Factor:",
                                             style={'margin-bottom':40,'display':'inline-block'}),
                                             
                                         daq.Slider(
@@ -537,11 +539,11 @@ app.layout = html.Div([
                         children=[
                             html.Div([
                                 html.Div([
-                                    html.P("Annual Demand (MWh):",style={'display':'inline-block'}),
+                                    html.P("Annual Energy Sales (MWh):",style={'display':'inline-block'}),
                                     #added question-mark 
                                     html.Div([
                                         ' \u003f\u20dd',
-                                        html.Span('Annual demand is equal to total electricity sales, this does not include line losses.'
+                                        html.Span('Annual energy sales are equal to total electricity sales, this does not include line losses.'
                                         , className="tooltiptext")], className="tooltip", style={'padding-left':5}),
                                     dcc.Input(id="demand", value=418355, type="number",style={'width':'100%'}) #this works RE: 
                                         ],
@@ -553,7 +555,7 @@ app.layout = html.Div([
                                     #added question-mark 
                                     html.Div([
                                         '\u003f\u20dd',
-                                        html.Span('Under the 2008 RE Law, RECs from customer-subsidized feed-in-tariff projects are allocated to each utility for 3% of their demand'
+                                        html.Span('Under the 2008 RE Law, RECs from customer-subsidized feed-in-tariff projects are allocated to each utility proportional to their total energy sales.'
                                         , className="tooltiptext")], className="tooltip", style={'padding-left':5}),
                                     dcc.Input(id="fit_MW", value=12942, type="number",style={'width':'100%'})
                                         ],
@@ -596,7 +598,7 @@ app.layout = html.Div([
         html.Div([
             dcc.Markdown("""
                     While your utility may already be using renewable energy, the RPS requires the sourcing of *new* renewable generation built since the implementation of the [2008 RE Law](https://www.doe.gov.ph/sites/default/files/pdf/issuances/dc2009-05-0008.pdf).
-                    The level of renewable energy that must be procured is a percentage of your total energy sales; displayed in yellow and blue in the figure below.
+                    The level of renewable energy that must be procured is a percentage of your total energy sales –– see yellow and blue in the chart below.
                     While the RPS requirement is mandatory for utilities to meet, many often desire going beyond this requirement in order to convey to their customers that they are supporting renewable energy, or to achieve cost savings provided by renewables.
 
                     In order to demonstrate that your utility is complying with the RPS, you will be required to procure and retire Renewable Energy Certificates (RECs). RECs are bankable credits
@@ -605,15 +607,15 @@ app.layout = html.Div([
                     RECs will be entered into an online tracking system––the Renewable Energy Market (REM)––which will be operated through the existing Wholesale Electricity Spot Market (WESM).
                     The REM will allow trading of RECs between third-parties and utilities, although prices are expected to potentially be volatile. For more information on RECs, [please consult this technical report](https://www.nrel.gov/docs/fy19osti/72204.pdf). 
 
-                    The RPS interacts with other components of the 2008 RE Law too, such as the Feed-in-Tariff (FiT) program, which procures blocks of renewable capacity at government-approved rates.
+                    The RPS interacts with other components of the 2008 RE Law such as the Feed-in-Tariff (FiT) program, which procures blocks of renewable capacity at government-approved rates.
                     Since 2018, all utilities in the Philippines are receiving RECs from FiT projects in proportion to their market share of total electricity sales in the country. As of January 2019,
-                    the number of RECs each utility receives is equal to 3.1% of their total sales. Because the RPS treats 2018 as 'year 0' of the RPS, and 2019 as a 'transition year', there is no RPS requirement
+                    the number of RECs each utility receives is equal to 3.1% of their total energy sales. Because the RPS treats 2018 as 'year 0' of the RPS, and 2019 as a 'transition year', there is no RPS requirement
                     during these years. However, utilities will receive RECs from the FiT or eligible new renewable projects during this time. Because RECs can be banked for future years,
-                    most utilities will enter year 1 (2020) of the RPS with an existing REC balance that will deplete over subsequent years as the RPS requirement increases.
+                    most utilities will enter year 1 (2020) of the RPS with an existing REC surplus that will deplete over subsequent years as the RPS requirement increases.
                     
-                    The table below displays a projection of RPS requirements for your utility. Additionally, the figures below display data such as
-                    the end-of-year REC balance in green and the annual change in REC balance in red. If the REC balance becomes negative in any year, this indicates that additional renewable capacity will need to be procured in advance of the REC shortfall,
-                    or REC purchases will need to be made on the spot market. 
+                    The table below displays a projection of RPS requirements for your utility based on your data inputs. Additionally, the figures below display data such as
+                    the end-of-year REC balance in green and the annual change in REC balance in red. **If the REC balance becomes negative in any year, this indicates that additional renewable capacity will need to be procured in advance of a REC shortfall,
+                    or REC purchases will need to be made on the spot market to ensure the utility is in compliance.** 
             """.replace('  ',''))],
             # html.Ul([html.Li(x) for x in part_1_bullets])],
             className='twelve columns',
@@ -740,9 +742,9 @@ html.Div([
                 procurement over multiple years, which can hedge risk against the falling costs of renewables. Additionally, this strategy allows
                 for growth in distributed energy resources, such as rooftop PV under the net-metering and Green Energy Option Program (GEOP), to count towards your
                 RPS capacity needs. 
-
-                In reality, a utility should seek a balance of these two procurement options along with other options such as REC purchases through the WESM.
-                This section of the calculator was merely intended to convey the scale of new capacity needed.
+                
+                In reality, a utility will likely need a balance of these two procurement options along with other options such as REC purchases through the WESM, 
+                but this section of the calculator aims to convey the scale of new capacity needed.
                 """.replace('  ', '')),
             ],
             className='four columns', style={'margin-top':15}),
@@ -774,14 +776,13 @@ html.Div([
     html.Div([
         dcc.Markdown("""
     Not only will additional renewables help you meet your RPS requirements while providing customers with cleaner electricity, but renewables
-    may be more cost-effective than fossil-fuel generators too. The International Renewable Energy Agency (IRENA) tracks the annual benchmark Levelized Cost of Energy (LCOE)
+    may be more cost-effective than fossil-fuel generators. The International Renewable Energy Agency (IRENA) tracks the annual benchmark Levelized Cost of Energy (LCOE)
     for various renewable technologies. An LCOE comprises the all-in cost of energy generation on a per kWh basis, for renewables this accounts for differences in equipment and installation costs, 
-    differences in resource capacity factor, and operations & maintenance expenses. For fossil-fuel generators, the LCOE also includes the cost of fuel such as coal or natural gas,
-    which is can be in the Philippines. 
+    resource capacity factor, and operations & maintenance expenses. For fossil-fuel generators, the LCOE also includes the cost of fuel such as coal or natural gas,
+    which can be quite expensive in the Philippines. 
 
-    IRENA's 2017 data suggests that the global LCOE for renewables ranges between $0.05 (Php 2.5) per kWh for hydro to $0.10 (Php 5) per kWh for utility-scale solar installations. Keep in mind that these are median values;
-    issuing a request for proposals (RFP) or working with a local developer are good ways to better understand what the exact costs will be for you. 
-    The graphs below display the median price, along with global prices between the fifth and ninety-fifth percentiles. Also understand that some technologies, like geothermal or hydro might only be suitable for larger capacity installations,
+    IRENA's 2017 data suggests that the global LCOE for renewables ranges between $0.05 (Php 2.5) per kWh for hydro to $0.10 (Php 5) per kWh for utility-scale solar installations.
+    The graphs below display the median price, along with global prices between the fifth and ninety-fifth percentiles. Note that some technologies, like geothermal or hydro might only be suitable for larger capacity installations,
     while solar, biomass, and wind are more likely to be scalable to your custom capacity requirements. 
     """.replace('  ', ''))
     ],
@@ -794,7 +795,7 @@ html.Div([
             dcc.Markdown(id="economic_text", children=["init"])
         ],
         className = 'twelve columns',
-        style={'margin-top':20}
+        style={'margin-top':0}
         ),
     ],
     className='row',
@@ -832,12 +833,6 @@ html.Div([
 
     html.Div([
             dcc.Markdown(id='goal_text')
-        ],
-        className = 'twelve columns',
-        style={'margin-top':0}),
-
-    html.Div([
-            dcc.Markdown(id='savings_text')
         ],
         className = 'twelve columns',
         style={'margin-top':0}),
@@ -897,6 +892,15 @@ html.Div([
             className='four columns',
             style={'margin-top':60}
             ),
+
+        html.Div([
+            html.Div([
+                dcc.Markdown(id='savings_text')
+            ],
+            className = 'input_box'),
+        ],
+        className='twelve columns',
+        style={'margin-top':0}),
     ],
     className='row',
     ),
@@ -922,7 +926,7 @@ html.Div([
     
     html.Div([
         dcc.Markdown("""
-        So far you have learned what your REC obligations are under the RPS are, you have explored how much capacity is needed for different renewable technologies to meet your utilities obligations, 
+        So far you have learned what your REC obligations are under the RPS, you have explored how much capacity is needed for different renewable technologies to meet your utility's obligations, 
         and you have planned for what years you will need to procure renewables by.
 
         The next step is to conduct a detailed feasibility study examining the techno-economic potential of specific renewable energy projects. To begin this process,
@@ -942,9 +946,9 @@ html.Div([
         html.Div([
             dcc.Markdown("""
             The RE Data Explorer is a user-friendly geospatial analysis tool for analyzing renewable energy potential and informing decisions. 
-            It can be used to visualize  capacity factor data for solar, wind, and geothermal resources. 
+            It can be used to visualize capacity factor data for solar, wind, and geothermal resources. 
             Assessing resource technical potential should be one of the first steps when conducting a feasibility study. 
-            Examples of how to integrate the RE Data Explorer into your decision support planning process are outlined in [this technical report](https://www.nrel.gov/docs/fy18osti/68913.pdf), 
+            Examples of how to integrate the RE Data Explorer into your decision support planning process are outlined in [this technical report](https://www.nrel.gov/docs/fy18osti/68913.pdf)
             and in [this fact-sheet](https://www.nrel.gov/docs/fy18osti/68899.pdf).
             """.replace('  ', ''))
         ],
@@ -1008,7 +1012,7 @@ html.Div([
         html.Div([
             dcc.Markdown(
                 """
-                ###### About the CEIA:
+                ###### About the Clean Energy Investment Accelerator (CEIA):
                 The CEIA is an innovative public-private partnership jointly led by Allotrope Partners, World Resources Institute,
                 and the U.S. National Renewable Energy Laboratory. Through targeted engagement in key countries,
                 the CEIA unlocks clean energy investment across commercial and industrial sectors.
@@ -1028,6 +1032,14 @@ html.Div([
         dcc.Markdown(
             """
             ###### References:
+
+            *Additional CEIA program information:*
+            
+            [CEIA Website](https://www.cleapenergyinvest.org/)
+           
+            [CEIA. "Webinar on Philippine RE at the Crossroads." Presented January 2019.](https://www.youtube.com/watch?v=gd744nnvfWk)
+
+
             *Additional tools to help conduct renewable feasibility studies:*
 
             [System Advisor Model](https://sam.nrel.gov/)
@@ -1036,16 +1048,13 @@ html.Div([
 
             [PVWatts](https://pvwatts.nrel.gov/)
 
+
             *More information on the RPS can be found in the following Department of Energy Circulars:*
 
             [Department of Energy. "Prescribing the Share of Renewable Energy Resources in the Country's Installed Capacity..." DC2015-07-0014. Published 2015.](https://www.doe.gov.ph/sites/default/files/pdf/issuances/dc_2015-07-0014.pdf)
+            
             [Department of Energy. "Rules and Regulations Implementing Republic Act No.9513". DC2009-05-0008. Published 2009.](https://www.doe.gov.ph/sites/default/files/pdf/issuances/dc2009-05-0008.pdf)
            
-           
-            *Additional program information from:*
-
-            [CEIA. "Webinar on Philippine RE at the Crossroads." Presented January 2019.](https://www.youtube.com/watch?v=gd744nnvfWk)
-
 
             *LCOE data from:*
 
@@ -1113,10 +1122,12 @@ def energy_mix_text(rows, columns):
 
     if energy_sum != 100:
         output = f"""
-        **Please edit the 'Percent of Utility Energy Mix' column so that the values sum to 100%. Currently they sum to {energy_sum}%.**
-        """.replace('  ', '')
+        Please edit the Percent of Utility Energy Mix column so that the values sum to 100%. Currently they sum to **{energy_sum}%**.
+        """.replace('  ', '') #test
     elif energy_sum == 100:
-        output = f"""""".replace('  ', '')
+        output = f"""
+        Your utility current uses **{renewable_sum}%** renewables, although this likely does not count towards the RPS.
+        """.replace('  ', '')
     
     return output
 
@@ -1246,7 +1257,7 @@ def html_REC_balance_table(json):
     df = pd.read_json(json)
     df['Year'] = df.index
     dfout = df[['Year','demand','rec_req','rec_balance','rec_change']]
-    dfout.columns = ['Year','Demand (MWh)','RPS Requirement','REC Balance','REC Balance Change']
+    dfout.columns = ['Year','Total Energy Sales (MWh)','RPS Requirement','REC Balance','REC Balance Change']
     dfout = round(dfout, 0)
     dictout = dfout.to_dict('records')
     return dictout
@@ -1277,14 +1288,14 @@ def df_capacity_updater(json, solar_cf, dpv_cf, wind_cf, geothermal_cf, biomass_
     df['rec_incremental_req'] = abs(df['rec_incremental_req'])
 
 
-    df['solar_need'] = df.apply(new_capacity_calc, args=([solar_cf]), axis = 1)
-    df['distributed PV_need'] = df.apply(new_capacity_calc, args=([dpv_cf]), axis = 1)
-    df['geothermal_need'] = df.apply(new_capacity_calc, args=([geothermal_cf]), axis = 1)
-    df['hydro_need'] = df.apply(new_capacity_calc, args=([hydro_cf]), axis = 1)
-    df['wind_need'] = df.apply(new_capacity_calc, args=([wind_cf]), axis = 1)
-    df['biomass_need'] = df.apply(new_capacity_calc, args=([biomass_cf]), axis = 1)
+    df['Utility-Scale Solar_need'] = df.apply(new_capacity_calc, args=([solar_cf]), axis = 1)
+    df['Distributed PV_need'] = df.apply(new_capacity_calc, args=([dpv_cf]), axis = 1)
+    df['Geothermal_need'] = df.apply(new_capacity_calc, args=([geothermal_cf]), axis = 1)
+    df['Hydro_need'] = df.apply(new_capacity_calc, args=([hydro_cf]), axis = 1)
+    df['Wind_need'] = df.apply(new_capacity_calc, args=([wind_cf]), axis = 1)
+    df['Biomass_need'] = df.apply(new_capacity_calc, args=([biomass_cf]), axis = 1)
 
-    df = df[['solar_need','distributed PV_need', 'geothermal_need','wind_need','biomass_need','hydro_need','rec_balance','rec_incremental_req', 'rec_req', 'rec_change']]
+    df = df[['Utility-Scale Solar_need','Distributed PV_need', 'Geothermal_need','Wind_need','Biomass_need','Hydro_need','rec_balance','rec_incremental_req', 'rec_req', 'rec_change']]
     df = round(df, 2)
 
     return df.to_json()
@@ -1304,10 +1315,11 @@ def capacity_requirement_simple_graph(json, solar_cf, geothermal_cf):
     for c in df.columns:
         if 'need' in c:
             color_ = color_dict[c.split('_')[0]]
+            name_ = c.replace('_',' ')
             trace = go.Scatter(
                 x=list(df.index),
                 y=list(df[c]),
-                name=c.replace('_',' ').capitalize(),
+                name=name_,
                 mode='lines+markers',
                 line=dict(shape='hv', color=color_, width = 3),
                 )
@@ -1355,10 +1367,10 @@ def one_year_build_graph(json, year_of_build, solar_cf, dpv_cf, wind_cf, hydro_c
 
     labels = ['Utility-Scale Solar', 'Distributed PV', 'Wind', 'Hydro', 'Geothermal', 'Biomass']
     values = [solar_one_time, dpv_one_time, wind_one_time, hydro_one_time, geothermal_one_time, biomass_one_time]
-    colors = [color_dict['utility-scale solar'], color_dict['distributed PV'], color_dict['wind'], color_dict['hydro'], color_dict['geothermal'], color_dict['biomass']]
+    colors = [color_dict['Utility-Scale Solar'], color_dict['Distributed PV'], color_dict['Wind'], color_dict['Hydro'], color_dict['Geothermal'], color_dict['Biomass']]
     fig = go.Figure(data=[go.Bar(
                 x=labels, y=values,
-                text=[f'{int(i):,} MW' for i in values],
+                text=[f"{int(i):,} MW" for i in values],
                 textposition='auto',
                 marker = dict(color=colors)
             )])
@@ -1389,7 +1401,9 @@ def capacity_text_maker(json, solar_cf, geothermal_cf):
     if first_year_recs < 0: #make sure that any recs will be needed
         first_year_recs = abs(first_year_recs)
         out = f"""
-        Based on the input data, your utility will require new capacity by {first_year_of_need}.
+        Based on the input data, your utility will require additional RECs by {first_year_of_need}. RECs can be created by procuring additional renewable capacity, 
+        incentivizing customers to adopt net-metering or Green Energy Option Program (GEOP) systems, 
+        or by making spot purchases through the REM/WESM.
         Because contracting and construction both take time, you should consider building renewables before {first_year_of_need}. 
         By {last_year}, your utility needs to procure a cumulative total of **{int(total_recs):,}** RECs, starting with **{int(first_year_recs):,}** RECs in {first_year_of_need}.
         It is important to plan for *when* and *how much* capacity to procure. Two high-level procurement strategies worth considering:
@@ -1423,7 +1437,7 @@ def lcoe_graph(rows, columns):
     spacer_traces = []
     for t in ['Utility-Scale Solar','Wind','Geothermal','Biomass','Hydro']:
 
-        color = color_dict[t.lower()]
+        color = color_dict[t]
         dfloc = irena_lcoe_df.loc[irena_lcoe_df['Technology'] == t]
         min_2010 = round(dfloc.loc[(dfloc['Year'] == 2010) & (dfloc['Item'] == 'MIN')]['pesos'][0:1].item(),2)
         max_2010 = round(dfloc.loc[(dfloc['Year'] == 2010) & (dfloc['Item'] == 'MAX')]['pesos'][0:1].item(),2)
@@ -1632,13 +1646,13 @@ def doughnut_graph(json):
                                 # '#FFD25C', #mustard
                                 # '#FFDC80', #mellow yellow     
                                 # '#222222', #rasin black            
-                                color_dict['wesm'],
-                                color_dict['biomass'],
-                                color_dict['geothermal'],
-                                color_dict['hydro'],
-                                color_dict['wind'],
-                                color_dict['utility-scale solar'],
-                                color_dict['distributed PV'],
+                                color_dict['WESM'],
+                                color_dict['Biomass'],
+                                color_dict['Geothermal'],
+                                color_dict['Hydro'],
+                                color_dict['Wind'],
+                                color_dict['Utility-Scale Solar'],
+                                color_dict['Distributed PV'],
                                 '#FFDC80',
                                 '#222222',
                                 ]},
@@ -1647,19 +1661,19 @@ def doughnut_graph(json):
             hole = 0.55,
             hoverinfo = 'label+percent',
             sort=False,
-            title=f"{input_dict['start_year']}<br>{int(input_dict['start_re_pct'] *100)}% Renewables")
+            title=f"{input_dict['start_year']} Power Mix<br>{int(input_dict['start_re_pct'] *100)}% Renewables")
     
     end = go.Pie(
             labels=techs,
             values=end_generation_list,
             marker={'colors': [
-                                color_dict['wesm'],
-                                color_dict['biomass'],
-                                color_dict['geothermal'],
-                                color_dict['hydro'],
-                                color_dict['wind'],
-                                color_dict['utility-scale solar'],
-                                color_dict['distributed PV'],
+                                color_dict['WESM'],
+                                color_dict['Biomass'],
+                                color_dict['Geothermal'],
+                                color_dict['Hydro'],
+                                color_dict['Wind'],
+                                color_dict['Utility-Scale Solar'],
+                                color_dict['Distributed PV'],
                                 '#FFDC80',
                                 '#222222',   
                                 ]},
@@ -1672,7 +1686,7 @@ def doughnut_graph(json):
 
     traces = [start, end]
 
-    layout = go.Layout(autosize = True, grid={"rows": 1, "columns": 2},showlegend=True, title=f"Current Power Mix & {input_dict['end_year']} Scenario")
+    layout = go.Layout(autosize = True, grid={"rows": 1, "columns": 2},showlegend=True)
     fig = go.Figure(data = traces, layout = layout)
 
     return fig
@@ -1695,15 +1709,16 @@ def economic_text_maker(rows, columns):
 
 
     out = f"""
-    The IRENA LCOE data informs us that the price of renewables has declined dramatically in recent years. Since 2010, the average LCOE for solar has declined 72% from $0.36 (Php 18) to $0.10 (Php 5) per kWh.
-    Over the same time period, wind's LCOE has declined 25% from $0.08 (Php 4) to $0.06 (Php 3) per kWh, while other technologies like geothermal, biomass, and hydro have remained constant or seen slight increases in cost. Renewables may be less expensive on a per kWh basis than coal or natural gas. 
+    The IRENA LCOE data informs us that the price of renewables has declined dramatically in recent years. Since 2010, the average LCOE for solar has declined 72% from $0.36 (Php 18) to $0.10 (Php 5) per kWh in 2017.
+    Over the same time period, wind's LCOE has declined 25% from $0.08 (Php 4) to $0.06 (Php 3) per kWh, while other technologies like geothermal, biomass, and hydro have remained constant or seen slight increases in cost. 
+    Renewables may be less expensive on a per kWh basis than coal or natural gas and also are not susceptible to fluctuations in fuel prices. 
 
     The Levelized Cost of Energy (PhP / kWh) data used in this calculator can be changed in the 'Energy Mix and Cost Input' tab of User Inputs. You can edit this to reflect prices that are specific to your utility. 
-    Based on the current entries, the cost of utility-scale solar for you is **Php {round(solar_cost - coal_cost, 1)} / kWh** compared with the cost of coal generation,
+    Based on the current entries, the cost of utility-scale solar for your utility is **Php {round(solar_cost - coal_cost, 1)} / kWh** compared with the cost of coal generation,
     and the cost of biomass has a difference of **Php {round(biomass_cost - coal_cost, 1)} / kWh**.
 
     Finally, consider that some REC procurement can be done through utility programs such as solar net-metering and the new GEOP, which allow customers to build their own renewables while providing the utility with RECs. 
-    These programs may offer the least-expensive method of procuring new RECs as the customer pays for the entire system cost, while the utility receives all RECs. 
+    Under the current GEOP design, a customer would pay for the entire system cost, while the utility would receive all RECs.
    """.replace('  ', '')
 
     return out
@@ -1715,18 +1730,24 @@ def economic_text_maker(rows, columns):
 def savings_text_maker(json):
     input_dict = json_func.loads(json)
 
+    currency_exchange = 50 #pesos in usd
+
     start_cost = int(input_dict['start_expense'])
+    start_cost_usd = int(start_cost / currency_exchange)
     start_demand = input_dict['start_demand']
-    start_cost_kwh = round(start_cost / start_demand / 1000,2)
+    start_cost_kwh = round(start_cost / start_demand / 1000,3)
+    start_cost_kwh_usd = round(start_cost_kwh / currency_exchange,3)
 
     end_re_pct = input_dict['end_re_pct']
 
-    end_cost = input_dict['end_expense']
+    end_cost = int(input_dict['end_expense'])
+    end_cost_usd = int(end_cost / currency_exchange)
     end_demand = input_dict['end_demand']
-    end_cost_kwh = round(end_cost / end_demand / 1000,2)
+    end_cost_kwh = round(end_cost / end_demand / 1000,3)
+    end_cost_kwh_usd = round(end_cost_kwh / currency_exchange,3)
 
     out = f"""
-    ###### Your current generation costs are Php {start_cost:,}, or **Php {start_cost_kwh} / kWh**. By switching to **{int(end_re_pct * 100)}% renewables** in {input_dict['end_year']}, your estimated generation costs would be Php {end_cost:,}, or **Php {end_cost_kwh} / kWh**. Currently you are creating {input_dict['start_recs']:,} RECS, and in 2030 you would be creating {int(input_dict['end_recs']):,} RECs per year. Please keep in mind that there is inherent risk in forecasting future generation costs.
+    ###### Your current generation costs are ${start_cost_usd:,} (Php {start_cost:,}), or **${start_cost_kwh_usd} (Php {start_cost_kwh} / kWh)**. By switching to **{int(end_re_pct * 100)}% renewables** by {input_dict['end_year']}, your estimated generation costs would be ${end_cost_usd:,} (Php {end_cost:,}), or **${end_cost_kwh_usd} (Php {end_cost_kwh} / kWh)**. Currently you are creating {input_dict['start_recs']:,} RECs, and in 2030 you would be creating {int(input_dict['end_recs']):,} RECs per year. Future generation costs are estimates that may change as market conditions evolve.
         """.replace('  ', '')
 
     return out
@@ -1771,13 +1792,16 @@ def goal_text_maker(json):
 
 
     out = f"""
-    While the RPS will require your utility to increase your renewable energy supply by {round(rps_min_increase,1)},
+    While the RPS will require your utility to increase your renewable energy supply by **{round(rps_min_increase,0)}%**,
     it may be cost-effective to go beyond this amount. Additional renewable procurement can provide price stability and may increase customer satisfaction with your utility. 
     Additional renewables also allow you to bank RECs, which can be sold through the WESM as a secondary revenue stream, or held for future compliance years.
 
+    First, you should ensure that the LCOE and Energy Mix data in the 'Energy Mix and Cost Input' tab available at the top of the tool is correct. 
+    Once this data has been input, this section will allow you to visualize and compare generation costs between various renewable growth scenarios.
+
     Using the slider below, you can change the desired percentage of renewables for your utility. This has been preset at the minimum RPS requirement. 
-    Below the slider, you can also select the mix of renewables that will be installed. As you change the desired renewable percentage and the mix of new renewables, the price per kWh will is updated.
-    These prices are derived from the LCOE values specified in the 'Energy Mix and Cost Input'. 
+    Below the slider, you can also select the mix of renewables that will be installed. As you change the desired renewable percentage and the mix of new renewables, the price per kWh will be updated.
+    These prices are derived from the LCOE values specified in the 'Energy Mix and Cost Input.'
    """.replace('  ', '')
 
     return out
