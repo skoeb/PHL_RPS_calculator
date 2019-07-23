@@ -16,7 +16,7 @@ import json as json_func
 dummy_df = pd.read_csv('dummy_df.csv')
 dummy_df['Year'] = dummy_df.index
 dummy_df_display = dummy_df[['Year','demand','rec_req','rec_balance','rec_change']]
-dummy_df_display.columns = ['Year','Total Energy Sales (MWh)','RPS Requirement','REC Balance','REC Balance Change']
+dummy_df_display.columns = ['Year','Energy Sales (MWh)','RPS Requirement','REC Balance','REC Balance Change']
 
 irena_lcoe_df = pd.read_csv("irena_lcoe.csv")
 irena_lcoe_df = irena_lcoe_df.dropna(subset = ['Technology'])
@@ -598,7 +598,7 @@ app.layout = html.Div([
         html.Div([
             dcc.Markdown("""
                     While your utility may already be using renewable energy, the RPS requires the sourcing of *new* renewable generation built since the implementation of the [2008 RE Law](https://www.doe.gov.ph/sites/default/files/pdf/issuances/dc2009-05-0008.pdf).
-                    The level of renewable energy that must be procured is a percentage of your total energy sales –– see yellow and blue in the chart below.
+                    The level of renewable energy that must be procured is a percentage of your total energy sales––see the yellow and blue bars in the chart below.
                     While the RPS requirement is mandatory for utilities to meet, many often desire going beyond this requirement in order to convey to their customers that they are supporting renewable energy, or to achieve cost savings provided by renewables.
 
                     In order to demonstrate that your utility is complying with the RPS, you will be required to procure and retire Renewable Energy Certificates (RECs). RECs are bankable credits
@@ -1020,7 +1020,7 @@ html.Div([
                 This includes implementation of Nationally Determined Contribution investment plans, long-term decarbonization strategies,
                 and broader efforts to meet growing energy needs and support strong economic growth.
 
-                Please contact the CEIA's in-country lead––Marlon Apanada––with any questions at [amj@allotropepartners.com](amj@allotropepartners.com)
+                Please contact the CEIA's in-country lead––Marlon Apanada––with any questions at <amj@allotropepartners.com>.
                 """.replace('  ', '')),
         ],
         className='row'),
@@ -1029,46 +1029,50 @@ html.Div([
     style={'margin-top':30}),
 
     html.Div([
-        dcc.Markdown(
-            """
-            ###### References:
+        html.Div([
+            dcc.Markdown(
+                """
+                ###### References:
 
-            *Additional CEIA program information:*
+                *Additional CEIA program information:*
+                
+                [CEIA Website](https://www.cleapenergyinvest.org/)
             
-            [CEIA Website](https://www.cleapenergyinvest.org/)
-           
-            [CEIA. "Webinar on Philippine RE at the Crossroads." Presented January 2019.](https://www.youtube.com/watch?v=gd744nnvfWk)
+                [CEIA. "Webinar on Philippine RE at the Crossroads." Presented January 2019.](https://www.youtube.com/watch?v=gd744nnvfWk)
 
 
-            *Additional tools to help conduct renewable feasibility studies:*
+                *Additional tools to help conduct renewable feasibility studies:*
 
-            [System Advisor Model](https://sam.nrel.gov/)
+                [System Advisor Model](https://sam.nrel.gov/)
 
-            [Renewable Energy Data Explorer](https://maps.nrel.gov/rede-southeast-asia/)
+                [Renewable Energy Data Explorer](https://maps.nrel.gov/rede-southeast-asia/)
 
-            [PVWatts](https://pvwatts.nrel.gov/)
+                [PVWatts](https://pvwatts.nrel.gov/)
 
 
-            *More information on the RPS can be found in the following Department of Energy Circulars:*
+                *More information on the RPS can be found in the following Department of Energy Circulars:*
 
-            [Department of Energy. "Prescribing the Share of Renewable Energy Resources in the Country's Installed Capacity..." DC2015-07-0014. Published 2015.](https://www.doe.gov.ph/sites/default/files/pdf/issuances/dc_2015-07-0014.pdf)
+                [Department of Energy. "Prescribing the Share of Renewable Energy Resources in the Country's Installed Capacity..." DC2015-07-0014. Published 2015.](https://www.doe.gov.ph/sites/default/files/pdf/issuances/dc_2015-07-0014.pdf)
+                
+                [Department of Energy. "Rules and Regulations Implementing Republic Act No.9513". DC2009-05-0008. Published 2009.](https://www.doe.gov.ph/sites/default/files/pdf/issuances/dc2009-05-0008.pdf)
             
-            [Department of Energy. "Rules and Regulations Implementing Republic Act No.9513". DC2009-05-0008. Published 2009.](https://www.doe.gov.ph/sites/default/files/pdf/issuances/dc2009-05-0008.pdf)
-           
 
-            *LCOE data from:*
+                *LCOE data from:*
 
-            [International Renewable Energy Agency (IRENA). "Renewable Power Generation Costs in 2017." Published 2018.](https://www.irena.org/-/media/Files/IRENA/Agency/Publication/2018/Jan/IRENA_2017_Power_Costs_2018.pdf)
-           
-
-            *Additional Price Data from:*
-
-            Biomass Renewable Energy Alliance (BREA). "Biomass: Fueling the Economy of the Philippines". Presented March 2019.
+                [International Renewable Energy Agency (IRENA). "Renewable Power Generation Costs in 2017." Published 2018.](https://www.irena.org/-/media/Files/IRENA/Agency/Publication/2018/Jan/IRENA_2017_Power_Costs_2018.pdf)
             
-            """.replace('  ', '')
+
+                *Additional Price Data from:*
+
+                Biomass Renewable Energy Alliance (BREA). "Biomass: Fueling the Economy of the Philippines". Presented March 2019.
+                
+                """.replace('  ', '')
         )],
-        className = 'input_box',
-        style={'margin-top':30}),
+        className = 'twelve columns'),
+    ],
+    className = 'input_box',
+    style={'margin-top':30}),
+
     html.Div([
         html.Img(
             src='assets/Tricolor_Spacer_Wide.png',
@@ -1257,7 +1261,7 @@ def html_REC_balance_table(json):
     df = pd.read_json(json)
     df['Year'] = df.index
     dfout = df[['Year','demand','rec_req','rec_balance','rec_change']]
-    dfout.columns = ['Year','Total Energy Sales (MWh)','RPS Requirement','REC Balance','REC Balance Change']
+    dfout.columns = ['Year','Energy Sales (MWh)','RPS Requirement','REC Balance','REC Balance Change']
     dfout = round(dfout, 0)
     dictout = dfout.to_dict('records')
     return dictout
