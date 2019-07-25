@@ -282,10 +282,10 @@ app.layout = html.Div([
                                         , className="tooltiptext")], className="tooltip", style={'padding-left':5}),
 
                                     dash_table.DataTable(
-                                    id='energy_mix_table',
-                                    columns=[{'name':i, 'id':i} for i in energy_mix_df.columns],
-                                    data=energy_mix_df.to_dict('records'),
-                                    style_cell_conditional=[
+                                        id='energy_mix_table',
+                                        columns=[{'name':i, 'id':i} for i in energy_mix_df.columns],
+                                        data=energy_mix_df.to_dict('records'),
+                                        style_cell_conditional=[
                                         {
                                     'if': {'column_id': c},
                                     'textAlign': 'middle'
@@ -1090,7 +1090,7 @@ className='row',
 className='row',
 ),
 
-dcc.Store(id='intermediate_df'),
+dcc.Store(id='intermediate_df'), #rps policy scenario, requirements, demand, rec balance
 dcc.Store(id='intermediate_df_capacity'),
 dcc.Store(id='intermediate_dict_scenario'),
 dcc.Store(id='intermediate_lcoe_df'),
@@ -1536,7 +1536,7 @@ def scenario_dict_maker(json, rows, columns, desired_pct, scenario_tag):
     starting_demand = int(list(df['demand'])[0])
 
     lcoe_df = pd.DataFrame(rows, columns=[c['name'] for c in columns])
-    cols = lcoe_df.columns.drop('Generation Source')
+    cols = lcoe_df.columns.drop(['Generation Source'])
     lcoe_df[cols] = lcoe_df[cols].apply(pd.to_numeric, errors='coerce') #convert all columns to numeric
 
     desired_pct = desired_pct/100
@@ -1578,13 +1578,12 @@ def scenario_dict_maker(json, rows, columns, desired_pct, scenario_tag):
         else:
             lcoe_df.loc[lcoe_df['Generation Source'] == f, 'future_generation'] = current_gen_f
 
-
-    
     for f in fossil_tech:
         current_pct_f = lcoe_df.loc[lcoe_df['Generation Source'] == f, 'current_MWh'][0:1].item() / start_fossil
         lcoe_df.loc[lcoe_df['Generation Source'] == f, 'future_generation'] = fossil_need * current_pct_f
 
     lcoe_df['future_price'] = lcoe_df['Levelized Cost of Energy (₱ / kWh)'] * lcoe_df['future_generation'] * 1000
+
     end_expense = round(lcoe_df['future_price'].sum(),0)
 
     techs = list(lcoe_df['Generation Source'])
@@ -1613,10 +1612,8 @@ def scenario_dict_maker(json, rows, columns, desired_pct, scenario_tag):
     output_dict['end_generation_list'] = [int(i) for i in end_generation_list]
     output_dict['techs'] = techs
     output_dict['rps_min_increase'] = rps_min_increase
+    output_dict['scenario_lcoe_df'] = lcoe_df.to_json()
 
-    total_gen = sum(end_generation_list)
-    end_gen_pct = [round(i/total_gen,2) for i in end_generation_list]
-    end_gen_dict = dict(zip(techs, end_gen_pct))
     return json_func.dumps(output_dict)
 
 @app.callback(Output('doughnut_graph', 'figure'),
@@ -1768,6 +1765,7 @@ def desired_pct_updater(json, rows, columns):
     df = pd.read_json(json)
 
     lcoe_df = pd.DataFrame(rows, columns=[c['name'] for c in columns])
+
     cols = lcoe_df.columns.drop('Generation Source')
     lcoe_df[cols] = lcoe_df[cols].apply(pd.to_numeric, errors='coerce') #convert all columns to numeric
 
