@@ -35,6 +35,8 @@ dummy_desired_pct_df = pd.read_csv("dummy_desired_pct.csv")
 utility_df = pd.read_csv("utility_data.csv", index_col='utility')
 utility_dict = utility_df[~utility_df.index.duplicated(keep='first')].to_dict('index')
 
+emissions_df = pd.read_csv('emissions.csv')
+
 re_tech = ['Utility-Scale Solar','Net-Metering','GEOP','Wind','Geothermal','Biomass','Hydro']
 fossil_tech = ['Coal', 'Natural Gas','Oil', 'WESM Purchases']
 
@@ -891,7 +893,7 @@ html.Div([
             ],
             className='four columns',
             style={'margin-top':60}
-            ),
+        ),
 
         html.Div([
             html.Div([
@@ -904,6 +906,57 @@ html.Div([
     ],
     className='row',
     ),
+
+#AUSTEN'S ENVIRONMENT ADDITION 
+html.Div([
+    html.Div([
+        html.Img(
+            src='assets/Tricolor_Spacer_Wide.png',
+            className='twelve columns')
+    ],
+    className = 'twelve columns',
+    style={'margin-left':'auto','margin-right':'auto'}
+    ),
+
+    html.Div([
+        html.H3('Part 5: Environmental Impact')
+    ],
+    className='twelve columns',
+    style={'margin-top':-20}
+    ),
+    
+    html.Div([
+        dcc.Markdown("""
+            TEXT
+        """.replace('  ',''))],
+    className='twelve columns',
+        # style={'font-family':'Helvetica','font-size':18,'margin-top':0},
+    ),
+  
+    html.Div([
+        dcc.Graph(id='emissions_sankey')
+    ],
+    className = 'eight columns',
+    style={'margin-top':15}),
+
+    html.Div([
+    dcc.RadioItems(
+        id='optimize_radio',
+        options=[
+            {'label':'Uniform Growth', 'value':'UNI'},
+            {'label':'Optimize for Cost', 'value':'COST'},
+            {'label':'Optimize for Emissions', 'value':'EMIS'},
+        ],
+        value='UNI'
+    )
+    ],
+    className='four columns',
+    style={'margin-top':60}
+    ),
+    
+],
+className='row'
+),
 
 #Next Steps
 html.Div([
@@ -1526,10 +1579,11 @@ def lcoe_graph(rows, columns):
     Input('energy_mix_table','data'),
     Input('energy_mix_table', 'columns'),
     Input('desired_pct','value'),
-    Input('scenario_radio','value')
+    Input('scenario_radio','value'),
+    Input('optimize_radio','value')
     ]
 )
-def scenario_dict_maker(json, rows, columns, desired_pct, scenario_tag):
+def scenario_dict_maker(json, rows, columns, desired_pct, scenario_tag, optimization): #remember to define optimization 
 
     df = pd.read_json(json)
 
@@ -1544,6 +1598,8 @@ def scenario_dict_maker(json, rows, columns, desired_pct, scenario_tag):
     lcoe_df['current_MWh'] = (lcoe_df['Percent of Utility Energy Mix'] / 100) * starting_demand
 
     lcoe_df['start_price'] = lcoe_df['Levelized Cost of Energy (₱ / kWh)'] * lcoe_df['current_MWh'] * 1000
+    
+    lcoe_df['Emissions'] = emissions_df['mt CO2/MWh']
 
     start_year = list(df.index)[0]
     end_year = list(df.index)[-1]
@@ -1570,17 +1626,63 @@ def scenario_dict_maker(json, rows, columns, desired_pct, scenario_tag):
     fossil_need = end_demand * (1-desired_pct)
     scenario = scenario_pct_dict[scenario_tag]
 
+    lcoe_df_f = lcoe_df.drop([4,5,6,7,8,9,10],axis = 0) #AUS
+    lcoe_df_f.sort_values('Levelized Cost of Energy (₱ / kWh)') #AUS
+    curr_total_f_gen = lcoe_df_f['current_MWh'].sum()
+    f_discrepancy = fossil_need - curr_total_f_gen
+
+    optimization_dict = { #AUS
+        'UNI': [lcoe_df_f,'Generation Source'],
+        'COST': [lcoe_df_f.sort_values('Levelized Cost of Energy (₱ / kWh)').reset_index().drop(columns=['index']),'Levelized Cost of Energy (₱ / kWh)'],
+        'EMIS': [lcoe_df_f.sort_values('Emissions').reset_index().drop(columns=['index']),'Emissions'] #need to add emission data to lcoe chart sooner than below...
+    }
+    
     lcoe_df['future_generation'] = 0
     for f in re_tech:
         current_gen_f = lcoe_df.loc[lcoe_df['Generation Source'] == f, 'current_MWh'][0:1].item()
         if f in scenario.keys():
             lcoe_df.loc[lcoe_df['Generation Source'] == f, 'future_generation'] = (scenario[f] * new_re_need) + current_gen_f
         else:
-            lcoe_df.loc[lcoe_df['Generation Source'] == f, 'future_generation'] = current_gen_f
+            lcoe_df.loc[lcoe_df['Generation Source'] == f, 'future_generation'] = current_gen_f    
 
-    for f in fossil_tech:
-        current_pct_f = lcoe_df.loc[lcoe_df['Generation Source'] == f, 'current_MWh'][0:1].item() / start_fossil
-        lcoe_df.loc[lcoe_df['Generation Source'] == f, 'future_generation'] = fossil_need * current_pct_f
+## BEGINNING OF AUSTEN OPTIMIZATION STUFF 
+
+    if optimization == 'UNI':
+        for f in fossil_tech:
+            current_pct_f = lcoe_df.loc[lcoe_df['Generation Source'] == f, 'current_MWh'][0:1].item() / start_fossil
+            lcoe_df.loc[lcoe_df['Generation Source'] == f, 'future_generation'] = fossil_need * current_pct_f
+    else: 
+        optimization_df = optimization_dict[optimization][0] #based on input value for optimization (selected with radio button)
+        optimization_col = optimization_dict[optimization][1]
+        print('optimization DF')
+        print(optimization_df)
+        if fossil_need > curr_total_f_gen: 
+            best_fossil = optimization_df['Generation Source'][0] #has least emissions or LCOE
+            for f in fossil_tech:
+                if f == best_fossil:
+                    lcoe_df.loc[lcoe_df['Generation Source'] == f, 'future_generation'] = f_discrepancy
+                else: 
+                    curr_gen = int(lcoe_df.loc[lcoe_df['Generation Source'] == f]['current_MWh'])
+                    lcoe_df.loc[lcoe_df['Generation Source'] == f, 'future_generation'] = curr_gen
+        else:
+            decending_op_df = optimization_df.sort_values(optimization_col,ascending=False).reset_index().drop(columns=['index'])
+            num = -1
+            to_retire = abs(f_discrepancy)
+            for m in decending_op_df['current_MWh']:
+                num = num+1
+                if to_retire - m > 0:
+                    lcoe_df.loc[lcoe_df['Generation Source'] == decending_op_df['Generation Source'][num], 'future_generation'] = 0
+                    to_retire = to_retire - decending_op_df['current_MWh'][num]
+                else: 
+                    amount_left = decending_op_df['current_MWh'][num] - to_retire 
+                    lcoe_df.loc[lcoe_df['Generation Source'] == decending_op_df['Generation Source'][num], 'future_generation'] = amount_left
+                    to_retire = 0
+
+## END OF AUSTEN STUFF 
+
+    #for f in fossil_tech:
+        #current_pct_f = lcoe_df.loc[lcoe_df['Generation Source'] == f, 'current_MWh'][0:1].item() / start_fossil
+        #lcoe_df.loc[lcoe_df['Generation Source'] == f, 'future_generation'] = fossil_need * current_pct_f
 
     lcoe_df['future_price'] = lcoe_df['Levelized Cost of Energy (₱ / kWh)'] * lcoe_df['future_generation'] * 1000
 
@@ -1807,6 +1909,122 @@ def goal_text_maker(json):
    """.replace('  ', '')
 
     return out
+
+# AUSTEN'S ENVIRONMENT SANKEY GRAPH 
+
+@app.callback(
+    Output('emissions_sankey','figure'),
+    [Input('intermediate_dict_scenario','data')]
+)
+
+def senkey_maker(json):
+    input_dict = json_func.loads(json)
+    scenario_lcoe_df = pd.read_json(input_dict['scenario_lcoe_df'])
+    mix_df = scenario_lcoe_df.drop(columns=['Levelized Cost of Energy (₱ / kWh)','start_price','future_price'])
+    total_fut_gen = sum(mix_df['future_generation'].tolist())
+    energy_mix_list = mix_df['Percent of Utility Energy Mix'].tolist()
+    #emissions_list = emissions_df['mt CO2/MWh'].tolist()
+    print('mix_df')
+    print(mix_df)
+    bau_list = []
+    for mix in energy_mix_list: 
+        bau_list.append(mix*0.01*total_fut_gen) #shows what gen would be if kept current RE % mix
+    mix_df['future BAU'] = bau_list
+    fossil_df = mix_df.drop([4,5,6,7,8,9,10],axis = 0) #only has FFs
+    print(fossil_df)
+
+    avoided_gen_list = []
+    for row in fossil_df.iterrows():
+        avoided_gen = row[1][5] - row[1][4] #avoided_gen = BAU gen - future gen
+        if avoided_gen < 0:
+            avoided_gen = 0
+            avoided_gen_list.append(avoided_gen)
+        else:
+            avoided_gen_list.append(avoided_gen)
+    
+    future_gen_list = fossil_df['future_generation'].to_list()
+    emissions_list = fossil_df['Emissions'].tolist()
+    print('future gen list')
+    print(future_gen_list)
+    print('emissions list')
+    print(emissions_list)
+
+    future_em_list = []
+    for gen in future_gen_list: 
+        idx = future_gen_list.index(gen)
+        em = gen*emissions_list[idx]
+        future_em_list.append(em)
+    
+    avoided_em_list = []
+    for gen in avoided_gen_list:
+        idx = avoided_gen_list.index(gen)
+        em = gen*emissions_list[idx]
+        avoided_em_list.append(em)    
+    
+    print('fut')
+    print(future_em_list)
+    print('avoid')
+    print(avoided_em_list)
+
+    light_color_list = ['rgba(34, 34, 34, 0.5)',
+            'rgba(222, 143, 110, 0.5)',
+            'rgba(84, 55, 153, 0.5)',
+            'rgba(0, 71, 119, 0.5)',
+            'rgba(0, 177, 89, 0.4)']
+
+    fig = go.Figure(data=[go.Sankey(
+        node = dict(
+            pad = 15,
+            thickness=20,
+            line = dict(color='black',width=0),
+            label = ['BAU Emissions from Coal',
+                    'BAU Emissions from Natural Gas',
+                    'BAU Emissions from Oil',
+                    'BAU Emissions from WESM',
+                    #'BAU Emissions from Biomass',
+                    #'BAU Emissions from Geothermal',
+                    'Future Emissions from Coal',
+                    'Future Emissions from Natural Gas',
+                    'Future Emissions from Oil',
+                    'Future Emissions from WESM',
+                    #'Future Emissions from Biomass',
+                    #'Future Emissions from Geothermal',
+                    'Avoided Emissions'],
+            color = [color_dict['Coal'],color_dict['Natural Gas'],'#543799',color_dict['WESM'], 
+                    color_dict['Coal'],color_dict['Natural Gas'],'#543799',color_dict['WESM'],
+                    color_dict['Biomass']]
+            #value = 'fixed'
+        ),
+        domain = dict(
+            #y = [0,1] 
+        ),
+        
+        link = dict(
+            source = [0,1,2,3,0,1,2,3],
+            target = [4,5,6,7,8,8,8,8],
+            value = future_em_list + avoided_em_list,
+            #color = light_color_list + [color_dict['Coal'],color_dict['Natural Gas'],'black',color_dict['WESM'],color_dict['Geothermal']]
+            #color = op_colors+['#b3e6b6','#b3e6b6','#b3e6b6','#b3e6b6','#b3e6b6']
+            color = ['#d9d9d9','#d9d9d9','#d9d9d9','#d9d9d9',
+                    light_color_list[4],light_color_list[4],light_color_list[4],light_color_list[4]]
+                    #[light_color_list[0],light_color_list[1],light_color_list[2],light_color_list[3],
+                    #color_dict['Coal'],color_dict['Natural Gas'],'#543799',color_dict['WESM']]
+                    #'#e6f1fa','#e6f1fa','#e6f1fa','#e6f1fa','#e6f1fa','#e6f1fa']
+                    
+                    #light_color_list[3], light_color_list[3], light_color_list[3], light_color_list[3]]
+                    #color_dict['Coal'],color_dict['Natural Gas'],'#543799',color_dict['WESM']]
+                    #'#b3e6b6','#b3e6b6','#b3e6b6','#b3e6b6']
+        ),
+        arrangement = 'fixed'
+    )])
+
+    re_pct = input_dict['end_re_pct']*100
+
+    fig.update_layout(title_text = f'Difference in Emissions with {re_pct} Renewable Integration')
+    fig.update_layout(height=800,font=dict(size=14))
+
+    return fig
+
 
 if __name__ == "__main__":
     app.run_server(debug=True)
