@@ -842,57 +842,88 @@ html.Div([
     html.Div([
         
         html.Div([
-            dcc.Graph(id='doughnut_graph')
-        ],
-        className = 'eight columns',
-        ),
-
-        html.Div([
-            html.P("Desired Renewables Percent:",
-            style={'margin-bottom':40,'display':'inline-block'}),
-            #added question-mark 
             html.Div([
-                ' \u003f\u20dd',
-                html.Span('This value can reflect your RPS goal, incremental RPS targets, or any other aspirational RE percentages.'
-                , className="tooltiptext")], className="tooltip", style={'padding-left':5}),        
-            daq.Slider(
-                id='desired_pct',
-                min=10,
-                max=100,
-                value=30,
-                step=0.5,
-                marks={
-                    20:{'label':'20%', 'style': {'color': '#77b0b1'}},
-                    40:{'label':'40%', 'style': {'color': '#77b0b1'}},
-                    60:{'label':'60%', 'style': {'color': '#77b0b1'}},
-                    80:{'label':'80%', 'style': {'color': '#77b0b1'}},
-                    100:{'label':'100%', 'style': {'color': '#77b0b1'}},
-                    },
-                handleLabel={"showCurrentValue": True,"label": "PERCENT"},
-                size={'width':'100%'} #resizes to window
+                html.H6('1) Select Your Desired Renewables Percent:',
+                style={'margin-bottom':40,'display':'inline-block'}),
+                #added question-mark 
+                html.Div([
+                    ' \u003f\u20dd',
+                    html.Span('This value can reflect your RPS goal, incremental RPS targets, or any other aspirational RE percentages.'
+                    , className="tooltiptext")], className="tooltip", style={'padding-left':5}),        
+                daq.Slider(
+                    id='desired_pct',
+                    min=10,
+                    max=100,
+                    value=30,
+                    step=0.5,
+                    marks={
+                        20:{'label':'20%', 'style': {'color': '#77b0b1'}},
+                        40:{'label':'40%', 'style': {'color': '#77b0b1'}},
+                        60:{'label':'60%', 'style': {'color': '#77b0b1'}},
+                        80:{'label':'80%', 'style': {'color': '#77b0b1'}},
+                        100:{'label':'100%', 'style': {'color': '#77b0b1'}},
+                        },
+                    handleLabel={"showCurrentValue": True,"label": "PERCENT"},
+                    size={'width':'100%'} #resizes to window
+                    )
+                    ],
+                #className = 'four columns',
+                style={'margin-top': 20}
+                ),
+            
+            html.Div([
+                html.H6('2) Select Your Desired Model Scenario:',
+                style={'margin-bottom':20,'display':'inline-block'}),                
+                dcc.RadioItems(
+                    id='scenario_radio',
+                    options=[
+                        {'label':'Utility-Scale Solar Growth', 'value':'SUN'},
+                        {'label':'High Net-Metering and GEOP Adoption', 'value':'NEM'},
+                        {'label':'Wind Growth', 'value':'WND'},
+                        {'label':'Biomass Growth', 'value':'BIO'},
+                        {'label':'Geothermal Growth', 'value':'GEO'},
+                        {'label':'Hydro Growth', 'value':'HYDRO'},
+                        {'label':'Balanced Renewable Adoption', 'value':'BAL'},
+                    ],
+                    value='BAL'
                 )
                 ],
-            className = 'four columns',
-            style={'margin-top': 20}
+            #className='four columns',
+            style={'margin-top':60}
             ),
-        
-        html.Div([
+
+            html.Div([
+            html.H6('3) Select Your Optimization Factor:',
+            style={'margin-bottom':20,'display':'inline-block'}), 
             dcc.RadioItems(
-                id='scenario_radio',
+                id='optimize_radio',
                 options=[
-                    {'label':'Utility-Scale Solar Growth', 'value':'SUN'},
-                    {'label':'High Net-Metering and GEOP Adoption', 'value':'NEM'},
-                    {'label':'Wind Growth', 'value':'WND'},
-                    {'label':'Biomass Growth', 'value':'BIO'},
-                    {'label':'Geothermal Growth', 'value':'GEO'},
-                    {'label':'Hydro Growth', 'value':'HYDRO'},
-                    {'label':'Balanced Renewable Adoption', 'value':'BAL'},
+                    {'label':'Uniform Growth', 'value':'UNI'},
+                    {'label':'Optimize for Cost', 'value':'COST'},
+                    {'label':'Optimize for Emissions', 'value':'EMIS'},
                 ],
-                value='BAL'
+                value='UNI'
             )
             ],
-            className='four columns',
-            style={'margin-top':60}
+            style={'margin-top':40,'margin-bottom':40}
+            )
+        ],
+        className ='four columns'
+        ),
+        
+        html.Div([
+            html.Div([
+                dcc.Graph(id='doughnut_graph')
+            ],
+            #style={'margin-bottom':10}
+            ),
+            html.Div([
+                dcc.Graph(id='emissions_sankey')
+            ],
+            #style={'margin-top':10}
+            ),          
+        ],
+        className = 'eight columns'
         ),
 
         html.Div([
@@ -932,28 +963,6 @@ html.Div([
     className='twelve columns',
         # style={'font-family':'Helvetica','font-size':18,'margin-top':0},
     ),
-  
-    html.Div([
-        dcc.Graph(id='emissions_sankey')
-    ],
-    className = 'eight columns',
-    style={'margin-top':15}),
-
-    html.Div([
-    dcc.RadioItems(
-        id='optimize_radio',
-        options=[
-            {'label':'Uniform Growth', 'value':'UNI'},
-            {'label':'Optimize for Cost', 'value':'COST'},
-            {'label':'Optimize for Emissions', 'value':'EMIS'},
-        ],
-        value='UNI'
-    )
-    ],
-    className='four columns',
-    style={'margin-top':60}
-    ),
-    
 ],
 className='row'
 ),
@@ -1923,15 +1932,11 @@ def senkey_maker(json):
     mix_df = scenario_lcoe_df.drop(columns=['Levelized Cost of Energy (₱ / kWh)','start_price','future_price'])
     total_fut_gen = sum(mix_df['future_generation'].tolist())
     energy_mix_list = mix_df['Percent of Utility Energy Mix'].tolist()
-    #emissions_list = emissions_df['mt CO2/MWh'].tolist()
-    print('mix_df')
-    print(mix_df)
     bau_list = []
     for mix in energy_mix_list: 
         bau_list.append(mix*0.01*total_fut_gen) #shows what gen would be if kept current RE % mix
     mix_df['future BAU'] = bau_list
     fossil_df = mix_df.drop([4,5,6,7,8,9,10],axis = 0) #only has FFs
-    print(fossil_df)
 
     avoided_gen_list = []
     for row in fossil_df.iterrows():
@@ -2020,8 +2025,8 @@ def senkey_maker(json):
 
     re_pct = input_dict['end_re_pct']*100
 
-    fig.update_layout(title_text = f'Difference in Emissions with {re_pct} Renewable Integration')
-    fig.update_layout(height=800,font=dict(size=14))
+    #fig.update_layout(title_text = f'Difference in Emissions with {re_pct} Renewable Integration')
+    fig.update_layout(height=400,font=dict(size=14))
 
     return fig
 
