@@ -12,6 +12,7 @@ import requests
 import pandas as pd
 import plotly.tools as tls
 import json as json_func
+from textwrap3 import wrap
 
 dummy_df = pd.read_csv('dummy_df.csv')
 dummy_df['Year'] = dummy_df.index
@@ -825,118 +826,123 @@ html.Div([
     style={'margin-left':'auto','margin-right':'auto'}
     ),
 
-    html.Div([
-        html.H3(
-            'Part 4: Goal Setting'
-    )],
-    className='twelve columns',
-    style={'margin-top':-20}
-    ),
+html.Div([
+    html.H3(
+        'Part 4: Goal Setting'
+)],
+className='twelve columns',
+style={'margin-top':-20}
+),
+
+html.Div([
+        dcc.Markdown(id='goal_text')
+    ],
+    className = 'twelve columns',
+    style={'margin-top':0}),
+
+html.Div([
 
     html.Div([
-            dcc.Markdown(id='goal_text')
-        ],
-        className = 'twelve columns',
-        style={'margin-top':0}),
-
-    html.Div([
-        
         html.Div([
+            html.H6('1) Select Your Desired Renewables Percent:',
+            style={'margin-bottom':40,'display':'inline-block'}),
+            #added question-mark
             html.Div([
-                html.H6('1) Select Your Desired Renewables Percent:',
-                style={'margin-bottom':40,'display':'inline-block'}),
-                #added question-mark 
-                html.Div([
-                    ' \u003f\u20dd',
-                    html.Span('This value can reflect your RPS goal, incremental RPS targets, or any other aspirational RE percentages.'
-                    , className="tooltiptext")], className="tooltip", style={'padding-left':5}),        
-                daq.Slider(
-                    id='desired_pct',
-                    min=10,
-                    max=100,
-                    value=30,
-                    step=0.5,
-                    marks={
-                        20:{'label':'20%', 'style': {'color': '#77b0b1'}},
-                        40:{'label':'40%', 'style': {'color': '#77b0b1'}},
-                        60:{'label':'60%', 'style': {'color': '#77b0b1'}},
-                        80:{'label':'80%', 'style': {'color': '#77b0b1'}},
-                        100:{'label':'100%', 'style': {'color': '#77b0b1'}},
-                        },
-                    handleLabel={"showCurrentValue": True,"label": "PERCENT"},
-                    size={'width':'100%'} #resizes to window
-                    )
-                    ],
-                #className = 'four columns',
-                style={'margin-top': 20}
-                ),
-            
-            html.Div([
-                html.H6('2) Select Your Desired Model Scenario:',
-                style={'margin-bottom':20,'display':'inline-block'}),                
-                dcc.RadioItems(
-                    id='scenario_radio',
-                    options=[
-                        {'label':'Utility-Scale Solar Growth', 'value':'SUN'},
-                        {'label':'High Net-Metering and GEOP Adoption', 'value':'NEM'},
-                        {'label':'Wind Growth', 'value':'WND'},
-                        {'label':'Biomass Growth', 'value':'BIO'},
-                        {'label':'Geothermal Growth', 'value':'GEO'},
-                        {'label':'Hydro Growth', 'value':'HYDRO'},
-                        {'label':'Balanced Renewable Adoption', 'value':'BAL'},
-                    ],
-                    value='BAL'
+                ' \u003f\u20dd',
+                html.Span('This value can reflect your RPS goal, incremental RPS targets, or any other aspirational RE percentages.'
+                , className="tooltiptext")], className="tooltip", style={'padding-left':5}),
+            daq.Slider(
+                id='desired_pct',
+                min=10,
+                max=100,
+                value=30,
+                step=0.5,
+                marks={
+                    20:{'label':'20%', 'style': {'color': '#77b0b1'}},
+                    40:{'label':'40%', 'style': {'color': '#77b0b1'}},
+                    60:{'label':'60%', 'style': {'color': '#77b0b1'}},
+                    80:{'label':'80%', 'style': {'color': '#77b0b1'}},
+                    100:{'label':'100%', 'style': {'color': '#77b0b1'}},
+                    },
+                handleLabel={"showCurrentValue": True,"label": "PERCENT"},
+                size={'width':'100%'} #resizes to window
                 )
                 ],
-            #className='four columns',
-            style={'margin-top':60}
+            #className = 'four columns',
+            style={'margin-top': 20}
             ),
 
-            html.Div([
-            html.H6('3) Select Your Optimization Factor:',
-            style={'margin-bottom':20,'display':'inline-block'}), 
+        html.Div([
+            html.H6('2) Select Your Desired Model Scenario:',
+            style={'margin-bottom':20,'display':'inline-block'}),
             dcc.RadioItems(
-                id='optimize_radio',
+                id='scenario_radio',
                 options=[
-                    {'label':'Uniform Growth', 'value':'UNI'},
-                    {'label':'Optimize for Cost', 'value':'COST'},
-                    {'label':'Optimize for Emissions', 'value':'EMIS'},
+                    {'label':'Utility-Scale Solar Growth', 'value':'SUN'},
+                    {'label':'High Net-Metering and GEOP Adoption', 'value':'NEM'},
+                    {'label':'Wind Growth', 'value':'WND'},
+                    {'label':'Biomass Growth', 'value':'BIO'},
+                    {'label':'Geothermal Growth', 'value':'GEO'},
+                    {'label':'Hydro Growth', 'value':'HYDRO'},
+                    {'label':'Balanced Renewable Adoption', 'value':'BAL'},
                 ],
-                value='UNI'
+                value='BAL'
             )
             ],
-            style={'margin-top':40,'margin-bottom':40}
-            )
-        ],
-        className ='four columns'
-        ),
-        
-        html.Div([
-            html.Div([
-                dcc.Graph(id='doughnut_graph')
-            ],
-            #style={'margin-bottom':10}
-            ),
-            html.Div([
-                dcc.Graph(id='emissions_sankey')
-            ],
-            #style={'margin-top':10}
-            ),          
-        ],
-        className = 'eight columns'
+        #className='four columns',
+        style={'margin-top':60}
         ),
 
         html.Div([
-            html.Div([
-                dcc.Markdown(id='savings_text')
+        html.H6('3) Select An Optimization Factor:',
+        style={'margin-bottom':20,'display':'inline-block'}),
+        dcc.RadioItems(
+            id='optimize_radio',
+            options=[
+                {'label':'Uniform Growth', 'value':'UNI'},
+                {'label':'Optimize for Cost', 'value':'COST'},
+                {'label':'Optimize for Emissions', 'value':'EMIS'},
             ],
-            className = 'input_box'),
+            value='UNI'
+        )
         ],
-        className='twelve columns',
-        style={'margin-top':0}),
+        style={'margin-top':40,'margin-bottom':40}
+        ),
+        html.Div([
+            dcc.Markdown(id='savings_text')
+        ])
+        #className = 'input_box')
     ],
-    className='row',
+    className ='four columns'
     ),
+
+    html.Div([
+        html.Div([
+            dcc.Graph(id='doughnut_graph')
+        ],
+        style={'margin-top':20,'margin-bottom':0},
+        #className='input_box'
+        ),
+        html.Div([
+            dcc.Graph(id='emissions_sankey')
+        ],
+        style={'margin-top':0}
+        ),
+    ],
+    className = 'eight columns'
+    ),
+
+    #html.Div([
+    #    html.Div([
+    #        dcc.Markdown(id='savings_text')
+    #    ],
+    #    className = 'input_box'),
+    #],
+    #className='twelve columns',
+    #style={'margin-top':0}),
+],
+className='row',
+),
 
 #AUSTEN'S ENVIRONMENT ADDITION 
 html.Div([
@@ -1311,7 +1317,9 @@ def html_REC_balance_graph(json):
     fig['layout']['yaxis1'].update(title='MWhs')
     fig['layout']['yaxis2'].update(title='RECs')
     fig['layout']['margin'].update(l=60,r=20,b=100,t=50,pad=0)
-    fig['layout'].update(title = 'RPS Requirements and REC Balance by Year')
+    #fig['layout'].update(title = 'RPS Requirements and REC Balance by Year')
+    fig.update_layout(title=dict(text='RPS Requirements and REC Balance by Year',font_size=18,font_color='black',font_family='Helvetica',x=0.5,y=1)) #xanchor='center'
+
     
     return fig
     
@@ -1393,7 +1401,7 @@ def capacity_requirement_simple_graph(json, solar_cf, geothermal_cf):
 
     layout = dict(
             height=450,
-            title='Incremental Capacity (MW) Requirements'
+            #title='Incremental Capacity (MW) Requirements'
             )
 
     fig = go.Figure(data=traces, layout=layout)
@@ -1401,6 +1409,8 @@ def capacity_requirement_simple_graph(json, solar_cf, geothermal_cf):
     fig['layout']['yaxis'].update(title='MW')
     fig['layout']['margin'].update(l=60,r=20,b=100,t=50,pad=0)
     fig['layout'].update(legend=dict(orientation="h"))
+    fig.update_layout(title=dict(text='Incremental Capacity (MW) Requirements',font_size=18,font_color='black',font_family='Helvetica',x=0,y=1)) #xanchor='center'
+
 
     return fig
 
@@ -1441,9 +1451,11 @@ def one_year_build_graph(json, year_of_build, solar_cf, dpv_cf, wind_cf, hydro_c
                 marker = dict(color=colors)
             )])
 
-    fig['layout'].update(title=f'Necessary Capacity for One-Time Renewable Purchase in {year_of_build}')
+    #fig['layout'].update(title=f'Necessary Capacity for One-Time Renewable Purchase in {year_of_build}')
     fig['layout']['yaxis'].update(title='MW')
     fig['layout']['margin'].update(l=60,r=20,b=100,t=50,pad=0)
+    fig.update_layout(title=dict(text=f'Necessary Capacity for One-Time Renewable Purchase in {year_of_build}',font_size=18,font_color='black',font_family='Helvetica',x=0.5,y=1)) #xanchor='center'
+    
 
     return fig
 
@@ -1555,7 +1567,9 @@ def lcoe_graph(rows, columns):
     fig = tls.make_subplots(rows=1, cols=len(traces), shared_yaxes=True, horizontal_spacing=0.03,
                             subplot_titles=['Utility-Scale Solar','Wind','Geothermal','Biomass','Hydro'])
     
-    fig['layout'].update(title='Global Average LCOE of Renewables')
+    #fig['layout'].update(title='Global Average LCOE of Renewables')
+    fig.update_layout(title=dict(text='Global Average LCOE of Renewables ',font_size=18,font_color='black',font_family='Helvetica',x=0.5,y=1)) #xanchor='center'
+
 
     for i, t in enumerate(traces):
         fig.append_trace(t, 1, i + 1)
@@ -1798,8 +1812,10 @@ def doughnut_graph(json):
 
     traces = [start, end]
 
-    layout = go.Layout(autosize = True, grid={"rows": 1, "columns": 2},showlegend=True)
+    layout = go.Layout(autosize = True, grid={"rows": 1, "columns": 2},showlegend=True,margin=dict(t=40,b=0,pad=0),height=230)
     fig = go.Figure(data = traces, layout = layout)
+    fig.update_layout(title=dict(text='Comparative Generation Mix 2018 vs. 2030',font_size=18,font_color='black',font_family='Helvetica',x=0.5,y=1)) #xanchor='center'
+
 
     return fig
 
@@ -1859,7 +1875,18 @@ def savings_text_maker(json):
     end_cost_kwh_usd = round(end_cost_kwh / currency_exchange,3)
 
     out = f"""
-    ###### Your current generation costs are ${start_cost_usd:,} (Php {start_cost:,}), or **${start_cost_kwh_usd} (Php {start_cost_kwh} / kWh)**. By switching to **{int(end_re_pct * 100)}% renewables** by {input_dict['end_year']}, your estimated generation costs would be ${end_cost_usd:,} (Php {end_cost:,}), or **${end_cost_kwh_usd} (Php {end_cost_kwh} / kWh)**. Currently you are creating {input_dict['start_recs']:,} RECs, and in 2030 you would be creating {int(input_dict['end_recs']):,} RECs per year. Future generation costs are estimates that may change as market conditions evolve.
+    ####
+    ###### View Changes in Generation Cost and RPS Creation: 
+    ####
+    Current: Php {start_cost:,}
+    ##### (**Php {start_cost_kwh} / kWh**)
+    ####
+    With **{int(end_re_pct * 100)}% renewables** in {input_dict['end_year']}: 
+    Php {end_cost:,}
+    ##### (**Php {end_cost_kwh} / kWh**) 
+    #### 
+    Currently, you are creating {input_dict['start_recs']:,} RECs per year, 
+    and in 2030 you would be creating {int(input_dict['end_recs']):,} RECs per year.
         """.replace('  ', '')
 
     return out
@@ -1957,13 +1984,13 @@ def senkey_maker(json):
     future_em_list = []
     for gen in future_gen_list: 
         idx = future_gen_list.index(gen)
-        em = gen*emissions_list[idx]
+        em = gen*emissions_list[idx]/1000000
         future_em_list.append(em)
     
     avoided_em_list = []
     for gen in avoided_gen_list:
         idx = avoided_gen_list.index(gen)
-        em = gen*emissions_list[idx]
+        em = gen*emissions_list[idx]/1000000
         avoided_em_list.append(em)    
     
     print('fut')
@@ -1976,41 +2003,19 @@ def senkey_maker(json):
             'rgba(84, 55, 153, 0.5)',
             'rgba(0, 71, 119, 0.5)',
             'rgba(0, 177, 89, 0.4)']
-
+    
+    #text = 'BAU Emissions from Coal:'
+    
     fig = go.Figure(data=[go.Sankey(
-        node = dict(
-            pad = 15,
-            thickness=20,
-            line = dict(color='black',width=0),
-            label = ['BAU Emissions from Coal',
-                    'BAU Emissions from Natural Gas',
-                    'BAU Emissions from Oil',
-                    'BAU Emissions from WESM',
-                    #'BAU Emissions from Biomass',
-                    #'BAU Emissions from Geothermal',
-                    'Future Emissions from Coal',
-                    'Future Emissions from Natural Gas',
-                    'Future Emissions from Oil',
-                    'Future Emissions from WESM',
-                    #'Future Emissions from Biomass',
-                    #'Future Emissions from Geothermal',
-                    'Avoided Emissions'],
-            color = [color_dict['Coal'],color_dict['Natural Gas'],'#543799',color_dict['WESM'], 
-                    color_dict['Coal'],color_dict['Natural Gas'],'#543799',color_dict['WESM'],
-                    color_dict['Biomass']]
-            #value = 'fixed'
-        ),
-        domain = dict(
-            #y = [0,1] 
-        ),
-        
+        valuesuffix = 'MMt CO2eq',        
         link = dict(
             source = [0,1,2,3,0,1,2,3],
             target = [4,5,6,7,8,8,8,8],
             value = future_em_list + avoided_em_list,
             #color = light_color_list + [color_dict['Coal'],color_dict['Natural Gas'],'black',color_dict['WESM'],color_dict['Geothermal']]
             #color = op_colors+['#b3e6b6','#b3e6b6','#b3e6b6','#b3e6b6','#b3e6b6']
-            color = ['#d9d9d9','#d9d9d9','#d9d9d9','#d9d9d9',
+            color = ['rgb(223, 232, 240)','rgb(223, 232, 240)','rgb(223, 232, 240)','rgb(223, 232, 240)',
+                    #['#d9d9d9','#d9d9d9','#d9d9d9','#d9d9d9',
                     light_color_list[4],light_color_list[4],light_color_list[4],light_color_list[4]]
                     #[light_color_list[0],light_color_list[1],light_color_list[2],light_color_list[3],
                     #color_dict['Coal'],color_dict['Natural Gas'],'#543799',color_dict['WESM']]
@@ -2020,13 +2025,40 @@ def senkey_maker(json):
                     #color_dict['Coal'],color_dict['Natural Gas'],'#543799',color_dict['WESM']]
                     #'#b3e6b6','#b3e6b6','#b3e6b6','#b3e6b6']
         ),
-        arrangement = 'fixed'
+        node = dict(
+            pad = 15,
+            thickness=20,
+            line = dict(color='black',width=0),
+            label = [f'BAU Coal: {round(future_em_list[0]+avoided_em_list[0],2)}MMt CO2eq',
+                    f'BAU Natural Gas: {round(future_em_list[1]+avoided_em_list[1],2)}MMt CO2eq',
+                    f'BAU Oil: {round(future_em_list[2]+avoided_em_list[2],2)}MMt CO2eq',
+                    f'BAU WESM: {round(future_em_list[3]+avoided_em_list[3],2)}MMt CO2eq',
+                    #'BAU Emissions from Biomass',
+                    #'BAU Emissions from Geothermal',
+                    f'Future Coal: {round(avoided_em_list[0],2)}MMt CO2eq',
+                    f'Future Natural Gas: {round(avoided_em_list[1],2)}MMt CO2eq',
+                    f'Future Oil: {round(avoided_em_list[2],2)}MMt CO2eq',
+                    f'Future WESM: {round(avoided_em_list[3],2)}MMt CO2eq',
+                    #'Future Emissions from Biomass',
+                    #'Future Emissions from Geothermal',
+                    f'Avoided Emissions: {round(sum(avoided_em_list),2)}MMt CO2eq'],
+            color = ['rgb(33, 33, 33)','rgb(105, 105, 105)','rgb(140, 140, 140)','rgb(181, 181, 181)',
+                     'rgb(33, 33, 33)','rgb(105, 105, 105)','rgb(140, 140, 140)','rgb(181, 181, 181)',color_dict['Biomass']]    
+                    #[color_dict['Coal'],color_dict['Natural Gas'],'#543799',color_dict['WESM'], 
+                    #color_dict['Coal'],color_dict['Natural Gas'],'#543799',color_dict['WESM'],
+                    #color_dict['Biomass']],
+            #wrap = True
+            #value = 'fixed'
+            #hoverinfo = 'label',
+            #hovertext = 'TEST'
+        ),        
+        arrangement = 'fixed',
     )])
 
-    re_pct = input_dict['end_re_pct']*100
+    re_pct = int(input_dict['end_re_pct']*100)
 
-    #fig.update_layout(title_text = f'Difference in Emissions with {re_pct} Renewable Integration')
-    fig.update_layout(height=400,font=dict(size=14))
+    fig.update_layout(title=dict(text=f'Difference in CO2eq Emissions with {re_pct}% Renewable Integration',font_size=18,font_color='black',font_family='Helvetica',x=0.5,y=0.93)) #xanchor='center'
+    fig.update_layout(height = 700,font=dict(size=14))
 
     return fig
 
