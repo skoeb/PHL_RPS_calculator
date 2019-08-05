@@ -1769,17 +1769,20 @@ def scenario_dict_maker(json, rows, columns, desired_pct, scenario_tag, optimiza
 ])
 def doughnut_graph(json):
     input_dict = json_func.loads(json)
+    df = pd.read_json(json)
+    print(df)
 
-    fossil_start_generation = sum(input_dict['start_generation_list'][0:3])
+    #fossil_start_generation = sum(input_dict['start_generation_list'][0:3])
+    #start_generation_list = input_dict['start_generation_list'][3:] + [fossil_start_generation]
+    #fossil_end_generation = sum(input_dict['end_generation_list'][0:3])
+    #end_generation_list = input_dict['end_generation_list'][3:] + [fossil_end_generation]
 
-    # solar_start_generation = sum(input_dict['start_generation_list'][0:3])
-    start_generation_list = input_dict['start_generation_list'][3:] + [fossil_start_generation]
+    #techs = input_dict['techs'][3:] + ['Fossil']
 
-    fossil_end_generation = sum(input_dict['end_generation_list'][0:3])
-    # solar_end_generation = sum(input_dict['end_generation_list'][0:3])
-    end_generation_list = input_dict['end_generation_list'][3:] + [fossil_end_generation]
-
-    techs = input_dict['techs'][3:] + ['Fossil']
+    start_generation_list = input_dict['start_generation_list']
+    end_generation_list = input_dict['end_generation_list']
+    techs = input_dict['techs']
+    #print(input_dict)
 
     start = go.Pie(
             labels=techs,
@@ -1794,6 +1797,7 @@ def doughnut_graph(json):
                                 # '#FFD25C', #mustard
                                 # '#FFDC80', #mellow yellow     
                                 # '#222222', #rasin black            
+                                'rgb(33, 33, 33)','rgb(105, 105, 105)','rgb(140, 140, 140)',
                                 color_dict['WESM'],
                                 color_dict['Biomass'],
                                 color_dict['Geothermal'],
@@ -1802,7 +1806,7 @@ def doughnut_graph(json):
                                 color_dict['Utility-Scale Solar'],
                                 color_dict['Distributed PV'],
                                 '#FFDC80',
-                                '#222222',
+                                #'#222222',
                                 ]},
             domain={"column": 0},
             textinfo='none',
@@ -1814,7 +1818,7 @@ def doughnut_graph(json):
     end = go.Pie(
             labels=techs,
             values=end_generation_list,
-            marker={'colors': [
+            marker={'colors': [ 'rgb(33, 33, 33)','rgb(105, 105, 105)','rgb(140, 140, 140)',
                                 color_dict['WESM'],
                                 color_dict['Biomass'],
                                 color_dict['Geothermal'],
@@ -1823,7 +1827,7 @@ def doughnut_graph(json):
                                 color_dict['Utility-Scale Solar'],
                                 color_dict['Distributed PV'],
                                 '#FFDC80',
-                                '#222222',   
+                                #'#222222', 
                                 ]},
             domain={"column": 1},
             textinfo='none',
@@ -1986,12 +1990,8 @@ def senkey_maker(json):
     for mix in energy_mix_list: 
         bau_list.append(mix*0.01*total_fut_gen) #shows what gen would be if kept current RE % mix
     mix_df['future BAU'] = bau_list
-    print('mix df')
-    print(mix_df)
     fossil_df = mix_df.drop([4,5,6,7,8,9,10],axis = 0) #only has FFs
-    print('fossil df')
-    print(fossil_df)
-    
+
     avoided_gen_list = []
     for row in fossil_df.iterrows():
         avoided_gen = row[1][5] - row[1][4] #avoided_gen = BAU gen - future gen
@@ -2016,19 +2016,6 @@ def senkey_maker(json):
         idx = avoided_gen_list.index(gen)
         em = gen*emissions_list[idx]/1000000
         avoided_em_list.append(em)    
-    
-    #print('bau em list')
-    #print(BAU_em_list)
-    #print('future generation')
-    #print(future_gen_list)
-    #print('avoided generation')
-    #print(avoided_gen_list)
-    #print('emissions')
-    #print(emissions_list)
-    print('future emissions (gen*emiss/1mil)')
-    print(fut_em_list)
-    #print('avoided emissions (')
-    #print(avoided_em_list)
 
     light_color_list = ['rgba(34, 34, 34, 0.5)',
             'rgba(222, 143, 110, 0.5)',
