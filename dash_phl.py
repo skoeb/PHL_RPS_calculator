@@ -13,6 +13,7 @@ import pandas as pd
 import plotly.tools as tls
 import json as json_func
 from textwrap3 import wrap
+import re
 
 dummy_df = pd.read_csv('dummy_df.csv')
 dummy_df['Year'] = dummy_df.index
@@ -111,7 +112,16 @@ def rps_df_maker(demand, demand_growth, future_procurement, fit_MW,
     df['rec_balance'] = df['rec_change'].cumsum()
 
     return df
-    
+
+#def error_color():
+    #output = Output('energy_mix_error_text','children')
+    #print(output)
+    #if re.search('Please',output):
+    #    color = 'red'
+    #else:
+    #    color = 'black'
+    #return color 
+
 app = dash.Dash(__name__)
 
 app.title = 'CEIA RPS Calculator'
@@ -310,13 +320,17 @@ app.layout = html.Div([
                                         'fontWeight': 'bold'
                                         }),
                                     html.P(' '),
-                                    dcc.Markdown(id="energy_mix_error_text", children=["init"]),
+                                    dcc.Markdown(id="energy_mix_error_text", children=["init"],
+                                        
+                                        #style={'color'}
+                                    ),
+
                                 ],
                                 className='six columns',
                                 style={'margin-bottom':0, 'verticalAlign':'top'}),
 
                                 html.Div([
-                                    html.P("Add Any Planned Renewable Procurement:",
+                                    html.P("Add Any Planned Renewable Procurement (input capacity factors on the following tab):",
                                     style={'display':'inline-block'}),
                                     #added question mark
                                     html.Div([
@@ -841,7 +855,6 @@ html.Div([
     style={'margin-top':0}),
 
 html.Div([
-
     html.Div([
         html.Div([
             html.H6('1) Select Your Desired Renewables Percent:',
@@ -932,6 +945,35 @@ html.Div([
     className = 'eight columns'
     ),
 
+    html.Div([
+        dcc.Markdown("""
+        #
+        In October of 2015, the Philippines committed to reducing the amount of greenhouse gases released
+        into the atmosphere by 70% below 2000 levels. The pledge, outlined in the country’s Nationally 
+        Determined Contributions (NDC), contributes to a world-wide, UNFCCC coordinated effort to keep 
+        global average temperature from increasing by more than 1.5 degrees Celsius. In anticipation of the 
+        historic Paris Agreement, more than 150 countries prepared individualized Intended NDCs. While not
+        legally binding, these written affirmations serve as a vector of international accountability and crucial 
+        means of coordinating a fair and timely response to the impacts of climate change. Choosing to 
+        incorporate renewable energy into your generation mix can not only prove economic, but instrumental 
+        in helping the Philippines to achieve its sustainability goals.
+        
+        Despite the global nature of the Paris Accord, its ulterior policies and the actions of individual utilities 
+        can incite real differences in local air quality and public health. Of all sectors, energy is responsible for 
+        the largest share of emissions in the country. According to the Energy Plan for 2012-2030, BAU growth 
+        in population and demand will facilitate a 4.5% increase in the sector’s yearly emissions. Under these 
+        circumstances, electricity production will account for 52% of the country’s total emissions by 2030. The 
+        Energy Plan’s low carbon scenario aims to keep that number at or below 48%. Limiting the growth of 
+        fossil fuel combustion not only contains greenhouse gases reduces the amount of airborne particulate 
+        matter responsible for preventable respiratory illnesses.  
+        """)#.replace('  ',''))
+    ],
+    className='twelve columns',
+    style = {'margin-left':0}
+    ),
+
+    
+
     #html.Div([
     #    html.Div([
     #        dcc.Markdown(id='savings_text')
@@ -944,34 +986,6 @@ html.Div([
 className='row',
 ),
 
-#AUSTEN'S ENVIRONMENT ADDITION 
-html.Div([
-    html.Div([
-        html.Img(
-            src='assets/Tricolor_Spacer_Wide.png',
-            className='twelve columns')
-    ],
-    className = 'twelve columns',
-    style={'margin-left':'auto','margin-right':'auto'}
-    ),
-
-    html.Div([
-        html.H3('Part 5: Environmental Impact')
-    ],
-    className='twelve columns',
-    style={'margin-top':-20}
-    ),
-    
-    html.Div([
-        dcc.Markdown("""
-            TEXT
-        """.replace('  ',''))],
-    className='twelve columns',
-        # style={'font-family':'Helvetica','font-size':18,'margin-top':0},
-    ),
-],
-className='row'
-),
 
 #Next Steps
 html.Div([
@@ -1198,11 +1212,21 @@ def energy_mix_text(rows, columns):
         """.replace('  ', '') #test
     elif energy_sum == 100:
         output = f"""
-        Your utility current uses **{renewable_sum}%** renewables, although this likely does not count towards the RPS.
+        Your utility currently uses **{renewable_sum}%** renewables, although this likely does not count towards the RPS.
         """.replace('  ', '')
-    
     return output
 
+@app.callback(
+    Output('energy_mix_error_text','style'),
+    [Input('energy_mix_error_text','children')]
+)
+def color_text(energy_mix_error_text):
+    output = energy_mix_error_text
+    if 'Please' in output:
+        color = {'color':'red'}
+    else: 
+        color = {'color':'black'} 
+    return color
 
 @app.callback(
     Output("fit_MW","value"),
@@ -1677,8 +1701,6 @@ def scenario_dict_maker(json, rows, columns, desired_pct, scenario_tag, optimiza
     else: 
         optimization_df = optimization_dict[optimization][0] #based on input value for optimization (selected with radio button)
         optimization_col = optimization_dict[optimization][1]
-        print('optimization DF')
-        print(optimization_df)
         if fossil_need > curr_total_f_gen: 
             best_fossil = optimization_df['Generation Source'][0] #has least emissions or LCOE
             for f in fossil_tech:
@@ -1941,7 +1963,8 @@ def goal_text_maker(json):
 
     Using the slider below, you can change the desired percentage of renewables for your utility. This has been preset at the minimum RPS requirement. 
     Below the slider, you can also select the mix of renewables that will be installed. As you change the desired renewable percentage and the mix of new renewables, the price per kWh will be updated.
-    These prices are derived from the LCOE values specified in the 'Energy Mix and Cost Input.'
+    These prices are derived from the LCOE values specified in the 'Energy Mix and Cost Input.' Next, you can select an optimization factor, cost or emissions, that will determine the type of fossil
+    fuels added to your growing overall capacity. Emissions calculations are based on 2017 EIA and US EPA data on heat content and heat rates for thermal fuels. 
    """.replace('  ', '')
 
     return out
@@ -1963,8 +1986,12 @@ def senkey_maker(json):
     for mix in energy_mix_list: 
         bau_list.append(mix*0.01*total_fut_gen) #shows what gen would be if kept current RE % mix
     mix_df['future BAU'] = bau_list
+    print('mix df')
+    print(mix_df)
     fossil_df = mix_df.drop([4,5,6,7,8,9,10],axis = 0) #only has FFs
-
+    print('fossil df')
+    print(fossil_df)
+    
     avoided_gen_list = []
     for row in fossil_df.iterrows():
         avoided_gen = row[1][5] - row[1][4] #avoided_gen = BAU gen - future gen
@@ -1974,18 +2001,15 @@ def senkey_maker(json):
         else:
             avoided_gen_list.append(avoided_gen)
     
-    future_gen_list = fossil_df['future_generation'].to_list()
+    fut_gen_list = fossil_df['future_generation'].to_list()
+    #BAU_gen_list = fossil_df['future BAU'].to_list()
     emissions_list = fossil_df['Emissions'].tolist()
-    print('future gen list')
-    print(future_gen_list)
-    print('emissions list')
-    print(emissions_list)
 
-    future_em_list = []
-    for gen in future_gen_list: 
-        idx = future_gen_list.index(gen)
+    fut_em_list = []
+    for gen in fut_gen_list: 
+        idx = fut_gen_list.index(gen)
         em = gen*emissions_list[idx]/1000000
-        future_em_list.append(em)
+        fut_em_list.append(em)
     
     avoided_em_list = []
     for gen in avoided_gen_list:
@@ -1993,10 +2017,18 @@ def senkey_maker(json):
         em = gen*emissions_list[idx]/1000000
         avoided_em_list.append(em)    
     
-    print('fut')
-    print(future_em_list)
-    print('avoid')
-    print(avoided_em_list)
+    #print('bau em list')
+    #print(BAU_em_list)
+    #print('future generation')
+    #print(future_gen_list)
+    #print('avoided generation')
+    #print(avoided_gen_list)
+    #print('emissions')
+    #print(emissions_list)
+    print('future emissions (gen*emiss/1mil)')
+    print(fut_em_list)
+    #print('avoided emissions (')
+    #print(avoided_em_list)
 
     light_color_list = ['rgba(34, 34, 34, 0.5)',
             'rgba(222, 143, 110, 0.5)',
@@ -2011,46 +2043,26 @@ def senkey_maker(json):
         link = dict(
             source = [0,1,2,3,0,1,2,3],
             target = [4,5,6,7,8,8,8,8],
-            value = future_em_list + avoided_em_list,
-            #color = light_color_list + [color_dict['Coal'],color_dict['Natural Gas'],'black',color_dict['WESM'],color_dict['Geothermal']]
-            #color = op_colors+['#b3e6b6','#b3e6b6','#b3e6b6','#b3e6b6','#b3e6b6']
+            value = fut_em_list + avoided_em_list,
             color = ['rgb(223, 232, 240)','rgb(223, 232, 240)','rgb(223, 232, 240)','rgb(223, 232, 240)',
-                    #['#d9d9d9','#d9d9d9','#d9d9d9','#d9d9d9',
                     light_color_list[4],light_color_list[4],light_color_list[4],light_color_list[4]]
-                    #[light_color_list[0],light_color_list[1],light_color_list[2],light_color_list[3],
-                    #color_dict['Coal'],color_dict['Natural Gas'],'#543799',color_dict['WESM']]
-                    #'#e6f1fa','#e6f1fa','#e6f1fa','#e6f1fa','#e6f1fa','#e6f1fa']
-                    
-                    #light_color_list[3], light_color_list[3], light_color_list[3], light_color_list[3]]
-                    #color_dict['Coal'],color_dict['Natural Gas'],'#543799',color_dict['WESM']]
-                    #'#b3e6b6','#b3e6b6','#b3e6b6','#b3e6b6']
+
         ),
         node = dict(
             pad = 15,
             thickness=20,
             line = dict(color='black',width=0),
-            label = [f'BAU Coal: {round(future_em_list[0]+avoided_em_list[0],2)}MMt CO2eq',
-                    f'BAU Natural Gas: {round(future_em_list[1]+avoided_em_list[1],2)}MMt CO2eq',
-                    f'BAU Oil: {round(future_em_list[2]+avoided_em_list[2],2)}MMt CO2eq',
-                    f'BAU WESM: {round(future_em_list[3]+avoided_em_list[3],2)}MMt CO2eq',
-                    #'BAU Emissions from Biomass',
-                    #'BAU Emissions from Geothermal',
-                    f'Future Coal: {round(avoided_em_list[0],2)}MMt CO2eq',
-                    f'Future Natural Gas: {round(avoided_em_list[1],2)}MMt CO2eq',
-                    f'Future Oil: {round(avoided_em_list[2],2)}MMt CO2eq',
-                    f'Future WESM: {round(avoided_em_list[3],2)}MMt CO2eq',
-                    #'Future Emissions from Biomass',
-                    #'Future Emissions from Geothermal',
+            label = [f'BAU Coal: {round(fut_em_list[0]+avoided_em_list[0],2)}MMt CO2eq',
+                    f'BAU Natural Gas: {round(fut_em_list[1]+avoided_em_list[1],2)}MMt CO2eq',
+                    f'BAU Oil: {round(fut_em_list[2]+avoided_em_list[2],2)}MMt CO2eq',
+                    f'BAU WESM: {round(fut_em_list[3]+avoided_em_list[3],2)}MMt CO2eq',
+                    f'Future Coal: {round(fut_em_list[0],2)}MMt CO2eq',
+                    f'Future Natural Gas: {round(fut_em_list[1],2)}MMt CO2eq',
+                    f'Future Oil: {round(fut_em_list[2],2)}MMt CO2eq',
+                    f'Future WESM: {round(fut_em_list[3],2)}MMt CO2eq',
                     f'Avoided Emissions: {round(sum(avoided_em_list),2)}MMt CO2eq'],
             color = ['rgb(33, 33, 33)','rgb(105, 105, 105)','rgb(140, 140, 140)','rgb(181, 181, 181)',
                      'rgb(33, 33, 33)','rgb(105, 105, 105)','rgb(140, 140, 140)','rgb(181, 181, 181)',color_dict['Biomass']]    
-                    #[color_dict['Coal'],color_dict['Natural Gas'],'#543799',color_dict['WESM'], 
-                    #color_dict['Coal'],color_dict['Natural Gas'],'#543799',color_dict['WESM'],
-                    #color_dict['Biomass']],
-            #wrap = True
-            #value = 'fixed'
-            #hoverinfo = 'label',
-            #hovertext = 'TEST'
         ),        
         arrangement = 'fixed',
     )])
