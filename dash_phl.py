@@ -113,15 +113,6 @@ def rps_df_maker(demand, demand_growth, future_procurement, fit_MW,
 
     return df
 
-#def error_color():
-    #output = Output('energy_mix_error_text','children')
-    #print(output)
-    #if re.search('Please',output):
-    #    color = 'red'
-    #else:
-    #    color = 'black'
-    #return color 
-
 app = dash.Dash(__name__)
 
 app.title = 'CEIA RPS Calculator'
@@ -373,7 +364,8 @@ app.layout = html.Div([
                                     html.P(' '),
                                     html.Button('Add Row', id='editing-rows-button', n_clicks=0),
                                     ], style={'margin-left':'35%'}),
-                                    ],
+                                    html.P('*Please note: existing RPS compliant plants and PPAs with the DUs are not included in the Automatic Utility Lookup. Please add manually here')
+                                    ],                                    
                                 className='six columns',
                                 style={'verticalAlign':'top'}
                                 ),
@@ -1769,8 +1761,6 @@ def scenario_dict_maker(json, rows, columns, desired_pct, scenario_tag, optimiza
 ])
 def doughnut_graph(json):
     input_dict = json_func.loads(json)
-    df = pd.read_json(json)
-    print(df)
 
     #fossil_start_generation = sum(input_dict['start_generation_list'][0:3])
     #start_generation_list = input_dict['start_generation_list'][3:] + [fossil_start_generation]
@@ -1782,7 +1772,6 @@ def doughnut_graph(json):
     start_generation_list = input_dict['start_generation_list']
     end_generation_list = input_dict['end_generation_list']
     techs = input_dict['techs']
-    #print(input_dict)
 
     start = go.Pie(
             labels=techs,
