@@ -12,7 +12,7 @@ import requests
 import pandas as pd
 import plotly.tools as tls
 import json as json_func
-from textwrap3 import wrap
+# from textwrap3 import wrap
 import re
 
 dummy_df = pd.read_csv('dummy_df.csv')
@@ -38,6 +38,7 @@ utility_df = pd.read_csv("utility_data.csv", index_col='utility')
 utility_dict = utility_df[~utility_df.index.duplicated(keep='first')].to_dict('index')
 
 emissions_df = pd.read_csv('emissions.csv')
+emissions_dict = dict(zip(emissions_df['Generation Source'], emissions_df['CO2']))
 
 re_tech = ['Utility-Scale Solar','Net-Metering','GEOP','Wind','Geothermal','Biomass','Hydro']
 fossil_tech = ['Coal', 'Natural Gas','Oil', 'WESM Purchases']
@@ -48,12 +49,26 @@ color_dict = {
     'Wind':('#00aedb'),
     'Solar':('#ffc425'),
     'Distributed PV':('#FFE896'),
+    'GEOP':('#FFE896'),
+    'Net-Metering':('#FFE896'),
     'Utility-Scale Solar':('#ffc425'),
     'Other':('#f37735'),
     'Hydro':('#115CBF'),
-    'Coal':('#222222'),
     'Natural Gas':('#DE8F6E'),
-    'WESM':('#004777')
+    'WESM Purchases':('#777777'),
+    'Natural Gas':('#333333'),
+    'Oil':('#555555'),
+    'Coal':('#111111'),
+}
+
+scenario_pct_dict = {
+    'SUN':{'Utility-Scale Solar':1},
+    'NEM':{'Net-Metering':0.5, 'GEOP':0.5},
+    'WND':{'Wind':1},
+    'BIO':{'Biomass':1},
+    'GEO':{'Geothermal':1},
+    'HYDRO':{'Hydro':1},
+    'BAL':{'Utility-Scale Solar':1/7, 'Net-Metering':1/7, 'GEOP':1/7, 'Wind':1/7, 'Biomass':1/7, 'Geothermal':1/7, 'Hydro':1/7}
 }
 
 
@@ -1634,105 +1649,77 @@ def scenario_dict_maker(json, rows, columns, desired_pct, scenario_tag, optimiza
 
     desired_pct = desired_pct/100
 
-    lcoe_df['current_MWh'] = (lcoe_df['Percent of Utility Energy Mix'] / 100) * starting_demand
-
-    lcoe_df['start_price'] = lcoe_df['Levelized Cost of Energy (₱ / kWh)'] * lcoe_df['current_MWh'] * 1000
-    
-    lcoe_df['Emissions'] = emissions_df['mt CO2/MWh']
-
     start_year = list(df.index)[0]
     end_year = list(df.index)[-1]
     start_demand = list(df.demand)[0]
     end_demand = list(df.demand)[-1]
     start_recs = list(df.fit)[0]
 
+    lcoe_df['current_MWh'] = (lcoe_df['Percent of Utility Energy Mix'] / 100) * starting_demand
+
+    lcoe_df['start_price'] = lcoe_df['Levelized Cost of Energy (₱ / kWh)'] * lcoe_df['current_MWh'] * 1000
+    
+    lcoe_df['fuel_emissions'] = lcoe_df['Generation Source'].map(emissions_dict)
+    lcoe_df['emissions'] = lcoe_df['fuel_emissions'] * lcoe_df['current_MWh']
+
     start_re = lcoe_df.loc[lcoe_df['Generation Source'].isin(re_tech)]['current_MWh'].sum()
     start_re_pct = round(start_re / start_demand,2)
     start_expense = round(lcoe_df['start_price'].sum(),0)
     start_fossil = lcoe_df.loc[lcoe_df['Generation Source'].isin(fossil_tech)]['current_MWh'].sum()
 
-    scenario_pct_dict = {
-        'SUN':{'Utility-Scale Solar':1},
-        'NEM':{'Net-Metering':0.5, 'GEOP':0.5},
-        'WND':{'Wind':1},
-        'BIO':{'Biomass':1},
-        'GEO':{'Geothermal':1},
-        'HYDRO':{'Hydro':1},
-        'BAL':{'Utility-Scale Solar':1/7, 'Net-Metering':1/7, 'GEOP':1/7, 'Wind':1/7, 'Biomass':1/7, 'Geothermal':1/7, 'Hydro':1/7}
-    }
-
     new_re_need = (end_demand  * desired_pct) - start_re #include losses, because this is interms of generation pct, not RECS
     fossil_need = end_demand * (1-desired_pct)
     scenario = scenario_pct_dict[scenario_tag]
 
-    lcoe_df_f = lcoe_df.drop([4,5,6,7,8,9,10],axis = 0) #AUS
-    lcoe_df_f.sort_values('Levelized Cost of Energy (₱ / kWh)') #AUS
-    curr_total_f_gen = lcoe_df_f['current_MWh'].sum()
-    f_discrepancy = fossil_need - curr_total_f_gen
+    curr_total_fossil_gen = lcoe_df.loc[lcoe_df['Generation Source'].isin(fossil_tech), 'current_MWh'].sum() #df of fossil fuels
+    fossil_discrepancy = fossil_need - curr_total_fossil_gen #if negative, indicates the amount that can be retired, if positive, the amount of new fossil gen needed
 
-    optimization_dict = { #AUS
-        'UNI': [lcoe_df_f,'Generation Source'],
-        'COST': [lcoe_df_f.sort_values('Levelized Cost of Energy (₱ / kWh)').reset_index().drop(columns=['index']),'Levelized Cost of Energy (₱ / kWh)'],
-        'EMIS': [lcoe_df_f.sort_values('Emissions').reset_index().drop(columns=['index']),'Emissions'] #need to add emission data to lcoe chart sooner than below...
-    }
-    
     lcoe_df['future_generation'] = 0
     for f in re_tech:
         current_gen_f = lcoe_df.loc[lcoe_df['Generation Source'] == f, 'current_MWh'][0:1].item()
         if f in scenario.keys():
             lcoe_df.loc[lcoe_df['Generation Source'] == f, 'future_generation'] = (scenario[f] * new_re_need) + current_gen_f
         else:
-            lcoe_df.loc[lcoe_df['Generation Source'] == f, 'future_generation'] = current_gen_f    
-
-## BEGINNING OF AUSTEN OPTIMIZATION STUFF 
+            lcoe_df.loc[lcoe_df['Generation Source'] == f, 'future_generation'] = current_gen_f
 
     if optimization == 'UNI':
         for f in fossil_tech:
             current_pct_f = lcoe_df.loc[lcoe_df['Generation Source'] == f, 'current_MWh'][0:1].item() / start_fossil
             lcoe_df.loc[lcoe_df['Generation Source'] == f, 'future_generation'] = fossil_need * current_pct_f
-    else: 
-        optimization_df = optimization_dict[optimization][0] #based on input value for optimization (selected with radio button)
-        optimization_col = optimization_dict[optimization][1]
-        if fossil_need > curr_total_f_gen: 
-            best_fossil = optimization_df['Generation Source'][0] #has least emissions or LCOE
-            for f in fossil_tech:
-                if f == best_fossil:
-                    lcoe_df.loc[lcoe_df['Generation Source'] == f, 'future_generation'] = f_discrepancy
-                else: 
-                    curr_gen = int(lcoe_df.loc[lcoe_df['Generation Source'] == f]['current_MWh'])
-                    lcoe_df.loc[lcoe_df['Generation Source'] == f, 'future_generation'] = curr_gen
-        else:
-            decending_op_df = optimization_df.sort_values(optimization_col,ascending=False).reset_index().drop(columns=['index'])
-            num = -1
-            to_retire = abs(f_discrepancy)
-            for m in decending_op_df['current_MWh']:
-                num = num+1
-                if to_retire - m > 0:
-                    lcoe_df.loc[lcoe_df['Generation Source'] == decending_op_df['Generation Source'][num], 'future_generation'] = 0
-                    to_retire = to_retire - decending_op_df['current_MWh'][num]
-                else: 
-                    amount_left = decending_op_df['current_MWh'][num] - to_retire 
-                    lcoe_df.loc[lcoe_df['Generation Source'] == decending_op_df['Generation Source'][num], 'future_generation'] = amount_left
-                    to_retire = 0
+    else:
+        if optimization == 'COST':
+            sort_column = 'Levelized Cost of Energy (₱ / kWh)'
+        elif optimization == 'EMIS':
+            sort_column = 'fuel_emissions'
 
-## END OF AUSTEN STUFF 
-
-    #for f in fossil_tech:
-        #current_pct_f = lcoe_df.loc[lcoe_df['Generation Source'] == f, 'current_MWh'][0:1].item() / start_fossil
-        #lcoe_df.loc[lcoe_df['Generation Source'] == f, 'future_generation'] = fossil_need * current_pct_f
+        fossil_df = lcoe_df.loc[lcoe_df['Generation Source'].isin(fossil_tech)]
+        fossil_df = fossil_df.sort_values(sort_column, ascending=True).reset_index(drop=True)
+        lcoe_df = lcoe_df.sort_values(sort_column, ascending=True)
+        fossil_df['cumsum'] = fossil_df['current_MWh'].cumsum() #subtract future fossil need from supply curve of current fossil capacity
+        fossil_df['fossil_needed'] = fossil_df['cumsum'] < fossil_need #is the full (current) installed capacity of this fuel needed in future?
+        
+        if len(fossil_df) == fossil_df['fossil_needed'].sum(): #additional fossil capacity needed
+            lcoe_df.loc[lcoe_df['Generation Source'].isin(fossil_tech), 'future_generation'] = fossil_df['current_MWh']
+            lower_price_index = fossil_df[sort_column].idxmin()
+            lcoe_df.at[lower_price_index, 'future_generation'] += fossil_need
+        elif fossil_df['fossil_needed'].sum() == 0: #100% RE
+            lcoe_df.loc[lcoe_df['Generation Source'].isin(fossil_tech), 'future_generation'] = 0
+        elif len(fossil_df) > fossil_df['fossil_needed'].sum(): # fossil retirements (or mothballing) needed
+            lcoe_df.loc[lcoe_df['Generation Source'].isin(fossil_tech), 'future_generation'] = list(fossil_df['current_MWh'] * fossil_df['fossil_needed'])
+            partial = list(fossil_df.loc[fossil_df['fossil_needed'] == False, 'Generation Source'])[0]
+            fossil_df.loc[fossil_df['Generation Source'] == partial, 'fossil_needed'] = 'partial'
+            all_resource_true_gen = fossil_df.loc[fossil_df['fossil_needed'] == True, 'future_generation'].sum()
+            remaining_need = fossil_need - all_resource_true_gen
+            lcoe_df.loc[lcoe_df['Generation Source'] == partial, 'future_generation'] = remaining_need
+        
+        lcoe_df = lcoe_df.sort_index()
+        print(fossil_df)
+        print(lcoe_df)
 
     lcoe_df['future_price'] = lcoe_df['Levelized Cost of Energy (₱ / kWh)'] * lcoe_df['future_generation'] * 1000
-
-    end_expense = round(lcoe_df['future_price'].sum(),0)
-
-    techs = list(lcoe_df['Generation Source'])
-    end_generation_list = list(lcoe_df['future_generation'])
-    start_generation_list = list(lcoe_df['current_MWh'])
-
     end_re = lcoe_df.loc[lcoe_df['Generation Source'].isin(re_tech)]['future_generation'].sum()
     end_recs = end_re - (start_re - start_recs)
 
-    rps_min_increase = df['rps_marginal_req'].sum()
 
     output_dict = dict()
     output_dict['start_year'] = int(start_year)
@@ -1741,16 +1728,16 @@ def scenario_dict_maker(json, rows, columns, desired_pct, scenario_tag, optimiza
     output_dict['start_recs'] = int(start_recs)
     output_dict['start_re_pct'] = float(start_re_pct)
     output_dict['start_expense'] = int(start_expense)
-    output_dict['start_generation_list'] = [int(i) for i in start_generation_list]
+    output_dict['start_generation_list'] = [int(i) for i in list(lcoe_df['current_MWh'])]
     output_dict['end_year'] = int(end_year)
     output_dict['end_demand'] = int(end_demand)
     output_dict['end_re'] = int(end_re)
     output_dict['end_recs'] = float(end_recs)
     output_dict['end_re_pct'] = float(desired_pct)
-    output_dict['end_expense'] = int(end_expense)
-    output_dict['end_generation_list'] = [int(i) for i in end_generation_list]
-    output_dict['techs'] = techs
-    output_dict['rps_min_increase'] = rps_min_increase
+    output_dict['end_expense'] = int(lcoe_df['future_price'].sum())
+    output_dict['end_generation_list'] = [int(i) for i in list(lcoe_df['future_generation'])]
+    output_dict['techs'] = list(lcoe_df['Generation Source'])
+    output_dict['rps_min_increase'] = df['rps_marginal_req'].sum()
     output_dict['scenario_lcoe_df'] = lcoe_df.to_json()
 
     return json_func.dumps(output_dict)
@@ -1762,41 +1749,15 @@ def scenario_dict_maker(json, rows, columns, desired_pct, scenario_tag, optimiza
 def doughnut_graph(json):
     input_dict = json_func.loads(json)
 
-    #fossil_start_generation = sum(input_dict['start_generation_list'][0:3])
-    #start_generation_list = input_dict['start_generation_list'][3:] + [fossil_start_generation]
-    #fossil_end_generation = sum(input_dict['end_generation_list'][0:3])
-    #end_generation_list = input_dict['end_generation_list'][3:] + [fossil_end_generation]
-
-    #techs = input_dict['techs'][3:] + ['Fossil']
-
     start_generation_list = input_dict['start_generation_list']
     end_generation_list = input_dict['end_generation_list']
     techs = input_dict['techs']
+    colors = [color_dict[t] for t in techs]
 
     start = go.Pie(
             labels=techs,
             values=start_generation_list,
-            marker={'colors': [
-                                # '#545454', #gray
-                                # '#00b159', #go green
-                                # '#d11141', #crimson
-                                # '#115CBF', #denim
-                                # '#00aedb', #vivid cerulean (blue)
-                                # '#ffc425', #sunglow
-                                # '#FFD25C', #mustard
-                                # '#FFDC80', #mellow yellow     
-                                # '#222222', #rasin black            
-                                'rgb(33, 33, 33)','rgb(105, 105, 105)','rgb(140, 140, 140)',
-                                color_dict['WESM'],
-                                color_dict['Biomass'],
-                                color_dict['Geothermal'],
-                                color_dict['Hydro'],
-                                color_dict['Wind'],
-                                color_dict['Utility-Scale Solar'],
-                                color_dict['Distributed PV'],
-                                '#FFDC80',
-                                #'#222222',
-                                ]},
+            marker={'colors':colors},
             domain={"column": 0},
             textinfo='none',
             hole = 0.55,
@@ -1807,17 +1768,7 @@ def doughnut_graph(json):
     end = go.Pie(
             labels=techs,
             values=end_generation_list,
-            marker={'colors': [ 'rgb(33, 33, 33)','rgb(105, 105, 105)','rgb(140, 140, 140)',
-                                color_dict['WESM'],
-                                color_dict['Biomass'],
-                                color_dict['Geothermal'],
-                                color_dict['Hydro'],
-                                color_dict['Wind'],
-                                color_dict['Utility-Scale Solar'],
-                                color_dict['Distributed PV'],
-                                '#FFDC80',
-                                #'#222222', 
-                                ]},
+            marker={'colors':colors},
             domain={"column": 1},
             textinfo='none',
             hole=0.55,
@@ -1969,17 +1920,15 @@ def goal_text_maker(json):
     [Input('intermediate_dict_scenario','data')]
 )
 
-def senkey_maker(json):
+def sankey_maker(json):
     input_dict = json_func.loads(json)
-    scenario_lcoe_df = pd.read_json(input_dict['scenario_lcoe_df'])
-    mix_df = scenario_lcoe_df.drop(columns=['Levelized Cost of Energy (₱ / kWh)','start_price','future_price'])
-    total_fut_gen = sum(mix_df['future_generation'].tolist())
-    energy_mix_list = mix_df['Percent of Utility Energy Mix'].tolist()
-    bau_list = []
-    for mix in energy_mix_list: 
-        bau_list.append(mix*0.01*total_fut_gen) #shows what gen would be if kept current RE % mix
-    mix_df['future BAU'] = bau_list
-    fossil_df = mix_df.drop([4,5,6,7,8,9,10],axis = 0) #only has FFs
+    lcoe_df = pd.read_json(input_dict['scenario_lcoe_df'])
+    total_fut_gen = lcoe_df['future_generation'].sum()
+    lcoe_df['future_BAU'] = lcoe_df['future_genration'] * lcoe_df['Percent of Utility Energy Mix'] * 0.01
+
+    fossil_df = lcoe_df.loc[lcoe_df['Generation Source'].isin(fossil_tech)]
+    fossil_df['avoided_gen'] = fossil_df['future_BAU'] - fossil_df['future_generation']
+    
 
     avoided_gen_list = []
     for row in fossil_df.iterrows():
@@ -1992,7 +1941,7 @@ def senkey_maker(json):
     
     fut_gen_list = fossil_df['future_generation'].to_list()
     #BAU_gen_list = fossil_df['future BAU'].to_list()
-    emissions_list = fossil_df['Emissions'].tolist()
+    emissions_list = fossil_df['emissions'].tolist()
 
     fut_em_list = []
     for gen in fut_gen_list: 
