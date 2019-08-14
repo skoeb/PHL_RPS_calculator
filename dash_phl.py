@@ -364,7 +364,7 @@ app.layout = html.Div([
                                     html.P(' '),
                                     html.Button('Add Row', id='editing-rows-button', n_clicks=0),
                                     ], style={'margin-left':'35%'}),
-                                    html.P('*Please note: existing RPS compliant plants and PPAs with the DUs are not included in the Automatic Utility Lookup. Please add manually here')
+                                    html.P('*Please note: existing RPS compliant plants and PPAs with the DUs are not included in the Automatic Utility Lookup. Please add them manually above.')
                                     ],                                    
                                 className='six columns',
                                 style={'verticalAlign':'top'}
@@ -646,6 +646,7 @@ html.Div([
             id='demand_and_REC_table',
             columns=[{'name':i, 'id':i} for i in dummy_df_display.columns],
             data=dummy_df_display.to_dict('records'),
+            export_format = 'csv',
             style_cell_conditional=[
                 {
             'if': {'column_id': c},
