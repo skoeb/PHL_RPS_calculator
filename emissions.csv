@@ -1,7 +1,7 @@
-Generation Source,mt CO2/MWh
-Coal ,0.986190462
-Natural Gas,0.406275105
-Oil ,0.767921466
+Generation Source,CO2
+Coal, 0.986190462
+Natural Gas, 0.406275105
+Oil, 0.767921466
 WESM Purchases,0.441617471
 Biomass,0
 Geothermal,0
