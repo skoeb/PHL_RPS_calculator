@@ -72,7 +72,7 @@ scenario_pct_dict = {
 }
 
 
-def rps_df_maker(demand, demand_growth, future_procurement, fit_MW,
+def rps_df_maker(demand, demand_growth, future_procurement, fit_pct,
                  annual_rps_inc_2020, annual_rps_inc_2023, 
                  end_year):
 
@@ -94,8 +94,10 @@ def rps_df_maker(demand, demand_growth, future_procurement, fit_MW,
 
     df = df.fillna(0)
 
+    fit_MW = (fit_pct / 100) * demand
+
+
     df['fit'] =  fit_MW
-    initial_fit_pct = fit_MW / demand
 
     future_procurement = future_procurement.groupby(['Online Year'], as_index=False)['Annual Generation (MWh)'].sum()
     future_procurement = future_procurement.rename({'Online Year':'year'}, axis='columns')
@@ -108,7 +110,7 @@ def rps_df_maker(demand, demand_growth, future_procurement, fit_MW,
 
     df['future_procurement'] = future_procurement['Annual Generation (MWh)']
 
-    fit_requirement = pd.Series(initial_fit_pct, index = df.index)
+    fit_requirement = pd.Series(fit_pct, index = df.index)
     fit_requirement[2018] = 0
     fit_requirement[2019] = 0
     df['rps_req'] = df['rps_req'] + fit_requirement
@@ -575,13 +577,13 @@ app.layout = html.Div([
                                 ),
 
                                 html.Div([
-                                    html.P("RECs from FiT (MWh):",style={'display':'inline-block'}),
+                                    html.P("Annual Fit Percent (%):",style={'display':'inline-block'}),
                                     #added question-mark 
                                     html.Div([
                                         '\u003f\u20dd',
-                                        html.Span('Under the 2008 RE Law, RECs from customer-subsidized feed-in-tariff projects are allocated to each utility proportional to their total energy sales.'
+                                        html.Span('Under the 2008 RE Law, RECs from customer-subsidized feed-in-tariff projects are allocated to each utility proportional to their total energy sales. This value is expressed as a percent, sometimes called K0'
                                         , className="tooltiptext")], className="tooltip", style={'padding-left':5}),
-                                    dcc.Input(id="fit_MW", value=12942, type="number",style={'width':'100%'})
+                                    dcc.Input(id="fit_pct", value=12942, type="number",style={'width':'100%'})
                                         ],
                                     className = 'four columns',
                                 ),
@@ -1235,17 +1237,6 @@ def color_text(energy_mix_error_text):
         color = {'color':'black'} 
     return color
 
-@app.callback(
-    Output("fit_MW","value"),
-    [Input("demand","value")]
-)
-def fit_mw_updater(demand):
-    if demand != '':
-        national_demand = 105529277
-        fit_total = 3264621
-        utility_fit = round((float(demand)/national_demand)*fit_total)
-        return utility_fit
-
 """
 UPDATERS FOR UTILITY NAME INPUT
 """
@@ -1272,13 +1263,13 @@ def growth_mw_updater(utility):
         Input("demand_growth", "value"),
         Input("future_procurement_table", "data"),
         Input("future_procurement_table", "columns"), #needs to be redefined
-        Input("fit_MW", "value"),
+        Input("fit_pct", "value"),
         Input("annual_rps_inc_2020", "value"),
         Input("annual_rps_inc_2023", "value"),
         Input("end_year", "value"),
     ])
 def df_initializer(demand, demand_growth, future_procurement_rows, future_procurement_columns,
-                    fit_MW, annual_rps_inc_2020, annual_rps_inc_2023, end_year):
+                    fit_pct, annual_rps_inc_2020, annual_rps_inc_2023, end_year):
 
     future_procurement = pd.DataFrame(future_procurement_rows, columns=[c['name'] for c in future_procurement_columns])
     future_procurement = future_procurement.loc[future_procurement['Generation Source'].isin(re_tech)]
@@ -1292,7 +1283,7 @@ def df_initializer(demand, demand_growth, future_procurement_rows, future_procur
     annual_rps_inc_2023 = float(annual_rps_inc_2023) / 100
     end_year = int(end_year) + 1
 
-    df = rps_df_maker(demand=demand, demand_growth=demand_growth, future_procurement=future_procurement, fit_MW=fit_MW,
+    df = rps_df_maker(demand=demand, demand_growth=demand_growth, future_procurement=future_procurement, fit_pct=fit_pct,
                     annual_rps_inc_2020=annual_rps_inc_2020, annual_rps_inc_2023=annual_rps_inc_2023,
                     end_year=end_year)
     df = round(df, 3)
@@ -1347,10 +1338,8 @@ def html_REC_balance_graph(json):
     fig['layout'].update(legend=dict(orientation="h"))
     fig['layout']['yaxis1'].update(title='MWhs')
     fig['layout']['yaxis2'].update(title='RECs')
-    fig['layout']['margin'].update(l=60,r=20,b=100,t=50,pad=0)
-    #fig['layout'].update(title = 'RPS Requirements and REC Balance by Year')
-    fig.update_layout(title=dict(text='RPS Requirements and REC Balance by Year',font_size=18,font_color='black',font_family='Helvetica',x=0.5,y=1)) #xanchor='center'
-
+    fig['layout']['margin'].update(l=20,r=20,b=20,t=60,pad=0)
+    fig['layout']['title'].update(text='RPS Requirements and REC Balance by Year', x=0.5)
     
     return fig
     
@@ -1432,7 +1421,7 @@ def capacity_requirement_simple_graph(json, solar_cf, geothermal_cf):
 
     layout = dict(
             height=450,
-            #title='Incremental Capacity (MW) Requirements'
+            title='Incremental Capacity (MW) Requirements'
             )
 
     fig = go.Figure(data=traces, layout=layout)
@@ -1440,8 +1429,7 @@ def capacity_requirement_simple_graph(json, solar_cf, geothermal_cf):
     fig['layout']['yaxis'].update(title='MW')
     fig['layout']['margin'].update(l=60,r=20,b=100,t=50,pad=0)
     fig['layout'].update(legend=dict(orientation="h"))
-    fig.update_layout(title=dict(text='Incremental Capacity (MW) Requirements',font_size=18,font_color='black',font_family='Helvetica',x=0,y=1)) #xanchor='center'
-
+    fig['layout']['title'].update(x=0.5)
 
     return fig
 
@@ -1482,11 +1470,10 @@ def one_year_build_graph(json, year_of_build, solar_cf, dpv_cf, wind_cf, hydro_c
                 marker = dict(color=colors)
             )])
 
-    #fig['layout'].update(title=f'Necessary Capacity for One-Time Renewable Purchase in {year_of_build}')
+    fig['layout'].update(title=f'Necessary Capacity for One-Time Renewable Purchase in {year_of_build}')
     fig['layout']['yaxis'].update(title='MW')
     fig['layout']['margin'].update(l=60,r=20,b=100,t=50,pad=0)
-    fig.update_layout(title=dict(text=f'Necessary Capacity for One-Time Renewable Purchase in {year_of_build}',font_size=18,font_color='black',font_family='Helvetica',x=0.5,y=1)) #xanchor='center'
-    
+    fig['layout']['title'].update(x=0.5)
 
     return fig
 
@@ -1497,7 +1484,7 @@ def one_year_build_graph(json, year_of_build, solar_cf, dpv_cf, wind_cf, hydro_c
         Input('solar_cf', 'value'),
         Input('geothermal_cf', 'value')
     ]
-)
+)                     
 def capacity_text_maker(json, solar_cf, geothermal_cf):
     df = pd.read_json(json)
     first_year_of_need = df.rec_balance.lt(0).idxmax()
@@ -1598,9 +1585,7 @@ def lcoe_graph(rows, columns):
     fig = tls.make_subplots(rows=1, cols=len(traces), shared_yaxes=True, horizontal_spacing=0.03,
                             subplot_titles=['Utility-Scale Solar','Wind','Geothermal','Biomass','Hydro'])
     
-    #fig['layout'].update(title='Global Average LCOE of Renewables')
-    fig.update_layout(title=dict(text='Global Average LCOE of Renewables ',font_size=18,font_color='black',font_family='Helvetica',x=0.5,y=1)) #xanchor='center'
-
+    fig['layout'].update(title='Global Average LCOE of Renewables')
 
     for i, t in enumerate(traces):
         fig.append_trace(t, 1, i + 1)
@@ -1622,9 +1607,9 @@ def lcoe_graph(rows, columns):
         tickangle=0, tickfont=dict(size=10))
         
     fig['layout']['yaxis'].update(title='₱ / kWh LCOE', range=[0,20])
+    fig['layout']['title'].update(x=0.5)
     
     return fig
-
 
 @app.callback(
     Output('intermediate_dict_scenario','data'),
@@ -1713,8 +1698,12 @@ def scenario_dict_maker(json, rows, columns, desired_pct, scenario_tag, optimiza
             lcoe_df.loc[lcoe_df['Generation Source'] == partial, 'future_generation'] = remaining_need
         
         lcoe_df = lcoe_df.sort_index()
-        print(fossil_df)
-        print(lcoe_df)
+        # print('fossil_df:')
+        # print(fossil_df)
+        # print(' ')
+        # print('lcoe_df:')
+        # print(lcoe_df)
+        # print(' ')
 
     lcoe_df['future_price'] = lcoe_df['Levelized Cost of Energy (₱ / kWh)'] * lcoe_df['future_generation'] * 1000
     end_re = lcoe_df.loc[lcoe_df['Generation Source'].isin(re_tech)]['future_generation'].sum()
@@ -1778,11 +1767,15 @@ def doughnut_graph(json):
 
     traces = [start, end]
 
-    layout = go.Layout(autosize = True, grid={"rows": 1, "columns": 2},showlegend=True,margin=dict(t=40,b=0,pad=0),height=230)
+    # layout = go.Layout(autosize = True, grid={"rows": 1, "columns": 2},showlegend=True,margin=dict(t=60,b=0,pad=0),height=300)
+    # 
+    # fig['layout']['margin'].update(l=60,r=20,b=100,t=50,pad=0)
+    # fig.update_layout(title=dict(text='Comparative Generation Mix 2018 vs. 2030',font_size=18,font_color='black',font_family='Helvetica',x=0.5,y=0.9)) #xanchor='center'
+    
+    layout = go.Layout(autosize=True, grid={"rows": 1, "columns": 2},showlegend=True)
     fig = go.Figure(data = traces, layout = layout)
-    fig.update_layout(title=dict(text='Comparative Generation Mix 2018 vs. 2030',font_size=18,font_color='black',font_family='Helvetica',x=0.5,y=1)) #xanchor='center'
-
-
+    fig['layout']['title'].update(text='Comparative Generation Mix 2018 vs. 2030', x=0.5)
+    
     return fig
 
 @app.callback(
@@ -1894,7 +1887,7 @@ def goal_text_maker(json):
     
     input_dict = json_func.loads(json)
 
-    rps_min_increase = input_dict['rps_min_increase'] *100
+    rps_min_increase = input_dict['rps_min_increase'] * 100
 
 
     out = f"""
@@ -1924,78 +1917,60 @@ def sankey_maker(json):
     input_dict = json_func.loads(json)
     lcoe_df = pd.read_json(input_dict['scenario_lcoe_df'])
     total_fut_gen = lcoe_df['future_generation'].sum()
-    lcoe_df['future_BAU'] = lcoe_df['future_genration'] * lcoe_df['Percent of Utility Energy Mix'] * 0.01
+    lcoe_df['future_BAU_gen'] = total_fut_gen * lcoe_df['Percent of Utility Energy Mix'] * 0.01
 
     fossil_df = lcoe_df.loc[lcoe_df['Generation Source'].isin(fossil_tech)]
-    fossil_df['avoided_gen'] = fossil_df['future_BAU'] - fossil_df['future_generation']
-    
+    fossil_df['avoided_gen'] = fossil_df['future_BAU_gen'] - fossil_df['future_generation']
+    fossil_df['avoided_gen'] = fossil_df['avoided_gen'].clip(lower=0)
+    fossil_df['future_emissions'] = (fossil_df['future_generation'] * fossil_df['fuel_emissions']) / 1000000
+    fossil_df['avoided_emissions'] = (fossil_df['avoided_gen'] * fossil_df['fuel_emissions']) / 1000000
+    fossil_df = fossil_df.reset_index()
+    index_list = list(fossil_df.index)
+    destination_list = [i + len(index_list) for i in index_list]
+    max_destination = max(destination_list) + 1
+    avoided_emission_destination = [max_destination for i in destination_list]
 
-    avoided_gen_list = []
-    for row in fossil_df.iterrows():
-        avoided_gen = row[1][5] - row[1][4] #avoided_gen = BAU gen - future gen
-        if avoided_gen < 0:
-            avoided_gen = 0
-            avoided_gen_list.append(avoided_gen)
-        else:
-            avoided_gen_list.append(avoided_gen)
-    
-    fut_gen_list = fossil_df['future_generation'].to_list()
-    #BAU_gen_list = fossil_df['future BAU'].to_list()
-    emissions_list = fossil_df['emissions'].tolist()
+    print(index_list)
+    print(destination_list)
+    print(max_destination)
+    print(avoided_emission_destination)
+    print(fossil_df)
 
-    fut_em_list = []
-    for gen in fut_gen_list: 
-        idx = fut_gen_list.index(gen)
-        em = gen*emissions_list[idx]/1000000
-        fut_em_list.append(em)
-    
-    avoided_em_list = []
-    for gen in avoided_gen_list:
-        idx = avoided_gen_list.index(gen)
-        em = gen*emissions_list[idx]/1000000
-        avoided_em_list.append(em)    
 
-    light_color_list = ['rgba(34, 34, 34, 0.5)',
-            'rgba(222, 143, 110, 0.5)',
-            'rgba(84, 55, 153, 0.5)',
-            'rgba(0, 71, 119, 0.5)',
-            'rgba(0, 177, 89, 0.4)']
-    
-    #text = 'BAU Emissions from Coal:'
+    color_list = [color_dict[t] for t in fossil_df['Generation Source']]
     
     fig = go.Figure(data=[go.Sankey(
-        valuesuffix = 'MMt CO2eq',        
+        valuesuffix = 'MMt CO2e',        
         link = dict(
-            source = [0,1,2,3,0,1,2,3],
-            target = [4,5,6,7,8,8,8,8],
-            value = fut_em_list + avoided_em_list,
-            color = ['rgb(223, 232, 240)','rgb(223, 232, 240)','rgb(223, 232, 240)','rgb(223, 232, 240)',
-                    light_color_list[4],light_color_list[4],light_color_list[4],light_color_list[4]]
+            source = index_list + index_list, 
+            target = destination_list + avoided_emission_destination,
+            value = list(fossil_df['future_emissions']) + list(fossil_df['avoided_emissions']),
+            color = (['#7F7F7F'] * len(fossil_df)) + (['#46AF7B'] * len(fossil_df)), 
 
         ),
         node = dict(
             pad = 15,
             thickness=20,
-            line = dict(color='black',width=0),
-            label = [f'BAU Coal: {round(fut_em_list[0]+avoided_em_list[0],2)}MMt CO2eq',
-                    f'BAU Natural Gas: {round(fut_em_list[1]+avoided_em_list[1],2)}MMt CO2eq',
-                    f'BAU Oil: {round(fut_em_list[2]+avoided_em_list[2],2)}MMt CO2eq',
-                    f'BAU WESM: {round(fut_em_list[3]+avoided_em_list[3],2)}MMt CO2eq',
-                    f'Future Coal: {round(fut_em_list[0],2)}MMt CO2eq',
-                    f'Future Natural Gas: {round(fut_em_list[1],2)}MMt CO2eq',
-                    f'Future Oil: {round(fut_em_list[2],2)}MMt CO2eq',
-                    f'Future WESM: {round(fut_em_list[3],2)}MMt CO2eq',
-                    f'Avoided Emissions: {round(sum(avoided_em_list),2)}MMt CO2eq'],
-            color = ['rgb(33, 33, 33)','rgb(105, 105, 105)','rgb(140, 140, 140)','rgb(181, 181, 181)',
-                     'rgb(33, 33, 33)','rgb(105, 105, 105)','rgb(140, 140, 140)','rgb(181, 181, 181)',color_dict['Biomass']]    
+            line = dict(color='black', width=0),
+            # label = [f'BAU Coal: {round(fut_em_list[0]+avoided_em_list[0],2)}MMt CO2eq',
+            #         f'BAU Natural Gas: {round(fut_em_list[1]+avoided_em_list[1],2)}MMt CO2eq',
+            #         f'BAU Oil: {round(fut_em_list[2]+avoided_em_list[2],2)}MMt CO2eq',
+            #         f'BAU WESM: {round(fut_em_list[3]+avoided_em_list[3],2)}MMt CO2eq',
+            #         f'Future Coal: {round(fut_em_list[0],2)}MMt CO2eq',
+            #         f'Future Natural Gas: {round(fut_em_list[1],2)}MMt CO2eq',
+            #         f'Future Oil: {round(fut_em_list[2],2)}MMt CO2eq',
+            #         f'Future WESM: {round(fut_em_list[3],2)}MMt CO2eq',
+            #         f'Avoided Emissions: {round(sum(avoided_em_list),2)}MMt CO2eq'],
+            label = (list(fossil_df['Generation Source']) * 2) + ['Avoided Emissions'],
+            color = (['#666666'] * len(fossil_df) * 2) + ['#00b159']
         ),        
         arrangement = 'fixed',
     )])
 
     re_pct = int(input_dict['end_re_pct']*100)
 
-    fig.update_layout(title=dict(text=f'Difference in CO2eq Emissions with {re_pct}% Renewable Integration',font_size=18,font_color='black',font_family='Helvetica',x=0.5,y=0.93)) #xanchor='center'
-    fig.update_layout(height = 700,font=dict(size=14))
+    fig['layout']['title'].update(text=f'Difference in CO2e Emissions with {re_pct}% Renewables', x=0.5) #xanchor='center'
+    # fig.update_layout(height = 400, margin=dict(t=60,b=0,pad=0))
 
     return fig
 
