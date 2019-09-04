@@ -8,12 +8,8 @@ import dash_html_components as html
 from dash.dependencies import Output, Input, State
 import plotly.graph_objs as go
 import pandas as pd
-import requests
-import pandas as pd
 import plotly.tools as tls
 import json as json_func
-# from textwrap3 import wrap
-import re
 
 def add_commas(df):
     for c in df.columns:
@@ -22,7 +18,6 @@ def add_commas(df):
 
 # --- Hide SeetingWithCopy Warnings --- 
 pd.set_option('chained_assignment',None)
-pd.options.display.float_format = '{:,}'.format
 
 dummy_df = pd.read_csv('dummy_df.csv')
 dummy_df['Year'] = dummy_df.index
@@ -2017,4 +2012,5 @@ def sankey_maker(json):
 
 
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    # app.run_server(debug=True)
+    app.run_server(debug=False)
