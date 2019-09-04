@@ -1481,7 +1481,7 @@ def capacity_requirement_simple_graph(json, solar_cf, geothermal_cf):
     fig = go.Figure(data=traces, layout=layout)
 
     fig['layout']['yaxis'].update(title='MW')
-    fig['layout']['margin'].update(l=60,r=20,b=100,t=50,pad=0)
+    fig['layout']['margin'].update(l=40,r=40,b=100,t=50,pad=0)
     fig['layout'].update(legend=dict(orientation="h"))
     fig['layout']['title'].update(x=0.5)
 
@@ -1739,12 +1739,14 @@ def scenario_dict_maker(json1, json2, rows, columns, desired_pct, scenario_tag, 
     else:
         if optimization == 'COST':
             sort_column = 'Levelized Cost of Energy (₱ / kWh)'
+            ascending=True
         elif optimization == 'EMIS':
             sort_column = 'fuel_emissions'
+            ascending=False
 
         fossil_df = lcoe_df.loc[lcoe_df['Generation Source'].isin(fossil_tech)]
-        fossil_df = fossil_df.sort_values(sort_column, ascending=True).reset_index(drop=True)
-        lcoe_df = lcoe_df.sort_values(sort_column, ascending=True)
+        fossil_df = fossil_df.sort_values(sort_column, ascending=ascending).reset_index(drop=True)
+        lcoe_df = lcoe_df.sort_values(sort_column, ascending=ascending)
         fossil_df['cumsum'] = fossil_df['current_MWh'].cumsum() #subtract future fossil need from supply curve of current fossil capacity
         fossil_df['fossil_needed'] = fossil_df['cumsum'] < fossil_need #is the full (current) installed capacity of this fuel needed in future?
         
@@ -1761,14 +1763,14 @@ def scenario_dict_maker(json1, json2, rows, columns, desired_pct, scenario_tag, 
             all_resource_true_gen = fossil_df.loc[fossil_df['fossil_needed'] == True, 'future_generation'].sum()
             remaining_need = fossil_need - all_resource_true_gen
             lcoe_df.loc[lcoe_df['Generation Source'] == partial, 'future_generation'] = remaining_need
-        
+    
         lcoe_df = lcoe_df.sort_index()
-        # print('fossil_df:')
-        # print(fossil_df)
-        # print(' ')
-        # print('lcoe_df:')
-        # print(lcoe_df)
-        # print(' ')
+        print('fossil_df:')
+        print(fossil_df)
+        print(' ')
+        print('lcoe_df:')
+        print(lcoe_df)
+        print(' ')
     lcoe_df['future_generation'] += lcoe_df['planned_generation']
 
     lcoe_df['future_price'] = lcoe_df['Levelized Cost of Energy (₱ / kWh)'] * lcoe_df['future_generation'] * 1000
@@ -1838,7 +1840,7 @@ def doughnut_graph(json):
     fig = go.Figure(data = traces, layout = layout)
     fig['layout']['title'].update(text='Comparative Generation Mix 2018 vs. 2030', x=0.5)
     fig['layout'].update(legend=dict(orientation="h"))
-    fig['layout']['margin'].update(l=40,r=40,b=0,t=40,pad=0)
+    fig['layout']['margin'].update(l=40,r=40,b=40,t=40,pad=0)
     
     return fig
 
@@ -2005,7 +2007,7 @@ def sankey_maker(json):
         arrangement = 'fixed',
     )])
 
-    fig['layout']['title'].update(text=f'Difference in CO2e Emissions', x=0.5) #xanchor='center'
+    fig['layout']['title'].update(text=f'Sources of Avoided Emissions', x=0.5) #xanchor='center'
     fig.update_layout(height = 300, margin=dict(t=60,b=40,pad=0))
 
     return fig
