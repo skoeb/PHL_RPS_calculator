@@ -22,10 +22,11 @@ def add_commas(df):
 
 # --- Hide SeetingWithCopy Warnings --- 
 pd.set_option('chained_assignment',None)
+pd.options.display.float_format = '{:,}'.format
 
 dummy_df = pd.read_csv('dummy_df.csv')
 dummy_df['Year'] = dummy_df.index
-dummy_df_display = dummy_df[['Year','demand','rps_req','rec_req','recs_created','recs_expired','rec_balance','annual_rec_need']]
+dummy_df_display = dummy_df[['Year','demand','rps_req','rec_req','rec_created','rec_expired','end_rec_balance','rec_shortfall']]
 dummy_df_display.columns = ['Year','Energy Sales (MWh)','RPS Requirement (%)','RPS Requirement (RECs)', 'RECs Created', 'RECs Expired','Year End REC Balance','REC Purchase Requirement']
 
 irena_lcoe_df = pd.read_csv("irena_lcoe.csv")
@@ -37,7 +38,7 @@ energy_mix_df = pd.read_csv("energy_mix.csv")
 energy_mix_df['Percent of Utility Energy Mix'] = energy_mix_df['Percent of Utility Energy Mix'] * 100
 
 new_build_df = pd.DataFrame({'Generation Source':['Utility-Scale Solar', '', ''],
-                            'Annual Generation (MWh)': [0, '',''],
+                            'Capacity (MW)': [0, '',''],
                             'Online Year': [2020,'','']})
 
 dummy_desired_pct_df = pd.read_csv("dummy_desired_pct.csv")
@@ -52,16 +53,17 @@ re_tech = ['Utility-Scale Solar','Net-Metering','GEOP','Wind','Geothermal','Biom
 fossil_tech = ['Coal', 'Natural Gas','Oil', 'WESM Purchases']
 
 color_dict = {
+    'Solar':('#ffc425'),
+    'Other':('#f37735'),
     'Biomass':('#00b159'),
     'Geothermal':('#d11141'),
+    'Hydro':('#115CBF'),
     'Wind':('#00aedb'),
-    'Solar':('#ffc425'),
     'Distributed PV':('#FFE896'),
     'GEOP':('#FFE896'),
     'Net-Metering':('#FFE896'),
     'Utility-Scale Solar':('#ffc425'),
     'Other':('#f37735'),
-    'Hydro':('#115CBF'),
     'Natural Gas':('#DE8F6E'),
     'WESM Purchases':('#777777'),
     'Natural Gas':('#333333'),
@@ -105,16 +107,16 @@ def rps_df_maker(demand, demand_growth, future_procurement, fit_pct,
     # --- Calculate FIT MWs (static, only based on first year) --- 
     df['fit_MWh'] = fit_pct * demand / 100
 
-    future_procurement = future_procurement.groupby(['Online Year'], as_index=False)['Annual Generation (MWh)'].sum()
+    future_procurement = future_procurement.groupby(['Online Year'], as_index=False)['generation'].sum()
     future_procurement = future_procurement.rename({'Online Year':'year'}, axis='columns')
     future_procurement = future_procurement.set_index('year')
     dummy_years = df.copy() #for forward fill join
     dummy_years = dummy_years.drop(dummy_years.columns, axis='columns')
     future_procurement = dummy_years.merge(future_procurement, left_index=True, right_index=True, how='outer').sort_index()
     future_procurement = future_procurement.fillna(0)
-    future_procurement['Annual Generation (MWh)'] = future_procurement['Annual Generation (MWh)'].cumsum()
+    future_procurement['generation'] = future_procurement['generation'].cumsum()
 
-    df['future_procurement'] = future_procurement['Annual Generation (MWh)']
+    df['future_procurement'] = future_procurement['generation']
 
     demand_for_calc = df['demand'].copy()
     demand_for_calc.index = [i + 1 for i in demand_for_calc.index]
@@ -130,32 +132,32 @@ def rps_df_maker(demand, demand_growth, future_procurement, fit_pct,
     fit_requirement_MW[2019] = 0
     df['rec_req'] = df['rec_req'] + fit_requirement_MW
 
-    df['recs_created'] = df['fit_MWh'] + df['future_procurement']
+    df['rec_created'] = df['fit_MWh'] + df['future_procurement']
 
-    df['rec_change'] = df['recs_created'] - df['rec_req']
-    
-    df['rec_balance'] = df['rec_change'].cumsum()
-    df['rec_balance'] = df['rec_balance'].clip(0)
+    df['rec_change'] = df['rec_created'] - df['rec_req']
 
+    # --- Calculate cumulative production and sales --- 
+    df['rec_cum_production'] = df['rec_created'].cumsum()
+    df['rec_cum_withdraws'] = df['rec_req'].cumsum()
 
-    # --- Number of RECs spent in past 3 years ---
-    df['rec_burden'] = df['rec_req'].rolling(4).sum()
-    df['rec_burden'] = df['rec_burden'] - df['rec_req']
-    df['three_year_old_recs'] = df['recs_created'].shift(4)
-    df['recs_expired'] = 0 
-    df.loc[df['three_year_old_recs'] > df['rec_burden'], 'recs_expired'] = df['three_year_old_recs'] - df['rec_burden']
-    df['rec_balance'] = df['rec_balance'] - df['recs_expired']
+    # --- Annual expirations based on three-year old surplus --- 
+    df['rec_expired'] = df['rec_created'].shift(3, fill_value=0) - df['rec_req'].shift(3, fill_value=0)
+    df['rec_expired'] = df['rec_expired'].clip(0) #no negative surpluses
+    df.loc[df.index < 2023, 'rec_expired'] = 0 #Assuming that RECs from transition period will be spent
+    df['rec_cum_expired'] = df['rec_expired'].cumsum() #cumulative expirations
 
+    # --- Total inventory is difference of cumulatives ---
+    df['end_rec_balance'] = df['rec_cum_production'] - df['rec_cum_withdraws'] - df['rec_cum_expired']
 
-    # --- Calculate Annual REC Need ---
-    df['annual_rec_need'] = 0
-    df.loc[df['rec_balance'] == 0, 'annual_rec_need'] = df['rec_change']
-    index_of_balance_change = df.loc[df['rec_balance'] > 0].index[-1]
-    df.loc[df.index == index_of_balance_change, 'annual_rec_need'] = df['rec_balance'] - df['rec_req']
-    df['annual_rec_need'] = df['annual_rec_need'].abs()
+    # --- clip rec_balance --- 
+    df['end_rec_balance'] = df['end_rec_balance'].clip(0)
+    df['begin_rec_balance'] = df['end_rec_balance'].shift(1).fillna(0)
 
-    print(df)
-    print(index_of_balance_change)
+    # --- Calculate Annual REC Need (purchase requirements)---
+    df['rec_shortfall'] = (df['begin_rec_balance'] + df['rec_created'] - df['rec_req'] - df['rec_expired']) * -1
+    df['rec_shortfall'] = df['rec_shortfall'].clip(0)
+
+    print(df[['begin_rec_balance','end_rec_balance','rec_created','rec_req','rec_change','rec_expired','rec_shortfall']].round(0))
 
     return df
 
@@ -374,7 +376,7 @@ app.layout = html.Div([
                                     id='future_procurement_table',
                                     columns=[
                                         {'id':'Generation Source', 'name':'Generation Source', 'presentation':'dropdown'},
-                                        {'id':'Annual Generation (MWh)', 'name':'Annual Generation (MWh)'},
+                                        {'id':'Capacity (MW)', 'name':'Capacity (MW)'},
                                         {'id':'Online Year', 'name':'Online Year'},
                                     ],
                                     editable=True,
@@ -663,13 +665,11 @@ app.layout = html.Div([
                     during these years. However, utilities will receive RECs from the FiT or eligible new renewable projects during this time. Because RECs can be banked for future years,
                     most utilities will enter year 1 (2020) of the RPS with an existing REC surplus that will deplete over subsequent years as the RPS requirement increases.
                     
-                    The table below displays a projection of RPS requirements for your utility based on your data inputs. Additionally, the figures below display data such as
-                    the end-of-year REC balance in green and the annual change in REC balance in red. **If the REC balance becomes negative in any year, this indicates that additional renewable capacity will need to be procured in advance of a REC shortfall,
+                    The table below displays a projection of RPS requirements for your utility based on your data inputs. Additionally, the figure displays data such as
+                    the end-of-year REC balance in green (if one exists), or the annual REC shortfall in red. **If there is a REC shortfall in any year, this indicates that additional renewable capacity will need to be procured in advance of a REC shortfall,
                     or REC purchases will need to be made on the spot market to ensure the utility is in compliance.** 
             """.replace('  ',''))],
-            # html.Ul([html.Li(x) for x in part_1_bullets])],
             className='twelve columns',
-            # style={'font-family':'Helvetica','font-size':18,'margin-top':0},
             ),
         ],
         className='row',
@@ -680,7 +680,7 @@ html.Div([
         dcc.Graph(id="demand_and_REC_graph")
     ], 
     className = 'twelve columns',
-    style={'margin-top':'60px'}),
+    style={'margin-top':'40px'}),
 
     html.Div([
         dash_table.DataTable(
@@ -709,7 +709,7 @@ html.Div([
                 }),
         ],
     className='twelve columns',
-    style={'margin-top':60}),
+    style={'margin-top':40}),
     ],
 className = 'row',
 ),
@@ -835,6 +835,14 @@ html.Div([
     IRENA's 2017 data suggests that the global LCOE for renewables ranges between $0.05 (Php 2.5) per kWh for hydro to $0.10 (Php 5) per kWh for utility-scale solar installations.
     The graphs below display the median price, along with global prices between the fifth and ninety-fifth percentiles. Note that some technologies, like geothermal or hydro might only be suitable for larger capacity installations,
     while solar, biomass, and wind are more likely to be scalable to your custom capacity requirements. 
+
+    The IRENA LCOE data informs us that the price of renewables has declined dramatically in recent years. Since 2010, the average LCOE for solar has declined 72% from $0.36 (Php 18) to $0.10 (Php 5) per kWh in 2017.
+    Over the same time period, wind's LCOE has declined 25% from $0.08 (Php 4) to $0.06 (Php 3) per kWh, while other technologies like geothermal, biomass, and hydro have remained constant or seen slight increases in cost. 
+    Renewables may be less expensive on a per kWh basis than coal or natural gas and also are not susceptible to fluctuations in fuel prices. 
+
+    Finally, consider that some REC procurement can be done through utility programs such as solar net-metering and the new GEOP, which allow customers to build their own renewables while providing the utility with RECs. 
+    Under the current GEOP design, a customer would pay for the entire system cost, while the utility would receive all RECs.
+
     """.replace('  ', ''))
     ],
     className='twelve columns',
@@ -845,7 +853,7 @@ html.Div([
         html.Div([
             dcc.Markdown(id="economic_text", children=["init"])
         ],
-        className = 'twelve columns',
+        className = 'input_box',
         style={'margin-top':0}
         ),
     ],
@@ -896,7 +904,7 @@ html.Div([
             #added question-mark
             html.Div([
                 ' \u003f\u20dd',
-                html.Span('This value can reflect your RPS goal, incremental RPS targets, or any other aspirational RE percentages.'
+                html.Span('This value can reflect your RPS goal, incremental RPS targets, or any other aspirational RE percentages. If planned procurement entered in section one surpasses the desired percent, the desired percent will have no effect.'
                 , className="tooltiptext")], className="tooltip", style={'padding-left':5}),
             daq.Slider(
                 id='desired_pct',
@@ -946,19 +954,14 @@ html.Div([
         dcc.RadioItems(
             id='optimize_radio',
             options=[
-                {'label':'Uniform Growth', 'value':'UNI'},
                 {'label':'Optimize for Cost', 'value':'COST'},
                 {'label':'Optimize for Emissions', 'value':'EMIS'},
             ],
-            value='UNI'
+            value='COST'
         )
         ],
         style={'margin-top':40,'margin-bottom':40}
         ),
-        html.Div([
-            dcc.Markdown(id='savings_text')
-        ])
-        #className = 'input_box')
     ],
     className ='four columns'
     ),
@@ -968,8 +971,8 @@ html.Div([
             dcc.Graph(id='doughnut_graph')
         ],
         style={'margin-top':20,'margin-bottom':0},
-        #className='input_box'
         ),
+
         html.Div([
             dcc.Graph(id='emissions_sankey')
         ],
@@ -980,23 +983,25 @@ html.Div([
     ),
 
     html.Div([
+        html.Div([
+            dcc.Markdown(id='savings_text')
+        ],
+        className = 'input_box')
+    ],
+    className = 'twelve columns'
+    ),
+    
+
+    html.Div([
         dcc.Markdown("""
         #
         In October of 2015, the Philippines committed to reducing the amount of greenhouse gases released
-        into the atmosphere by 70% below 2000 levels. The pledge, outlined in the country’s Nationally 
+        into the atmosphere by 70% below year 2000 levels. The pledge, outlined in the country’s Nationally 
         Determined Contributions (NDC), contributes to a world-wide, UNFCCC coordinated effort to keep 
-        global average temperature from increasing by more than 1.5 degrees Celsius. In anticipation of the 
-        historic Paris Agreement, more than 150 countries prepared individualized Intended NDCs. While not
-        legally binding, these written affirmations serve as a vector of international accountability and crucial 
-        means of coordinating a fair and timely response to the impacts of climate change. Choosing to 
-        incorporate renewable energy into your generation mix can not only prove economic, but instrumental 
-        in helping the Philippines to achieve its sustainability goals.
+        global average temperature from increasing by more than 1.5 degrees Celsius. Policies such as the RPS
+        are one way the Philippines is working to achieve it's Paris commitment. 
         
-        Despite the global nature of the Paris Accord, its ulterior policies and the actions of individual utilities 
-        can incite real differences in local air quality and public health. Of all sectors, energy is responsible for 
-        the largest share of emissions in the country. According to the Energy Plan for 2012-2030, BAU growth 
-        in population and demand will facilitate a 4.5% increase in the sector’s yearly emissions. Under these 
-        circumstances, electricity production will account for 52% of the country’s total emissions by 2030. The 
+        Electricity production will account for 52% of the country’s total emissions by 2030. The 
         Energy Plan’s low carbon scenario aims to keep that number at or below 48%. Limiting the growth of 
         fossil fuel combustion not only contains greenhouse gases reduces the amount of airborne particulate 
         matter responsible for preventable respiratory illnesses.  
@@ -1210,6 +1215,7 @@ dcc.Store(id='intermediate_df'), #rps policy scenario, requirements, demand, rec
 dcc.Store(id='intermediate_df_capacity'),
 dcc.Store(id='intermediate_dict_scenario'),
 dcc.Store(id='intermediate_lcoe_df'),
+dcc.Store(id='future_procurement_df')
 
 ], 
 className='ten columns offset-by-one'
@@ -1282,26 +1288,59 @@ def growth_mw_updater(utility):
     return output
 
 @app.callback(
+    Output("future_procurement_df", "data"),
+    [   
+        Input("future_procurement_table","data"),
+        Input("future_procurement_table","columns"),
+        Input("solar_cf", "value"),
+        Input("dpv_cf", "value"),
+        Input("wind_cf", "value"),
+        Input("geothermal_cf", "value"),
+        Input("biomass_cf", "value"),
+        Input("hydro_cf", "value"),
+    ])
+def future_procurement_generation(future_procurement_rows, future_procurement_columns,
+                                    solar_cf, dpv_cf, wind_cf, geothermal_cf, biomass_cf, hydro_cf):
+    
+    future_procurement = pd.DataFrame(future_procurement_rows, columns=[c['name'] for c in future_procurement_columns])
+    future_procurement = future_procurement.loc[future_procurement['Generation Source'].isin(re_tech)]
+    future_procurement = future_procurement.groupby(['Generation Source', 'Online Year'], as_index=False)['Capacity (MW)'].sum()
+    
+    cols = ['Online Year', 'Capacity (MW)']
+    future_procurement[cols] = future_procurement[cols].apply(pd.to_numeric, errors='coerce')
+
+    cf_dict = {'Utility-Scale Solar': solar_cf,
+               'Net-Metering': dpv_cf,
+               'GEOP': dpv_cf,
+               'Wind': wind_cf,
+               'Geothermal': geothermal_cf,
+               'Biomass' : biomass_cf,
+               'Hydro' : hydro_cf
+               }
+
+    future_procurement['cf'] = future_procurement['Generation Source'].map(cf_dict)
+    future_procurement['cf'] = future_procurement['cf'] / 100
+    future_procurement['generation'] = future_procurement['Capacity (MW)'] * future_procurement['cf'] * 8760
+
+    print(future_procurement)
+
+    return future_procurement.to_json()
+
+@app.callback(
     Output("intermediate_df", "data"),
     [
         Input("demand", "value"),
         Input("demand_growth", "value"),
-        Input("future_procurement_table", "data"),
-        Input("future_procurement_table", "columns"), #needs to be redefined
+        Input("future_procurement_df", "data"),
         Input("fit_pct", "value"),
         Input("annual_rps_inc_2020", "value"),
         Input("annual_rps_inc_2023", "value"),
         Input("end_year", "value"),
     ])
-def df_initializer(demand, demand_growth, future_procurement_rows, future_procurement_columns,
+def df_initializer(demand, demand_growth, json,
                     fit_pct, annual_rps_inc_2020, annual_rps_inc_2023, end_year):
 
-    future_procurement = pd.DataFrame(future_procurement_rows, columns=[c['name'] for c in future_procurement_columns])
-    future_procurement = future_procurement.loc[future_procurement['Generation Source'].isin(re_tech)]
-    future_procurement = future_procurement.groupby(['Generation Source', 'Online Year'], as_index=False)['Annual Generation (MWh)'].sum()
-    
-    cols = ['Online Year', 'Annual Generation (MWh)']
-    future_procurement[cols] = future_procurement[cols].apply(pd.to_numeric, errors='coerce')
+    future_procurement = pd.read_json(json)
 
     demand_growth = float(demand_growth) / 100
     annual_rps_inc_2020 = float(annual_rps_inc_2020) / 100
@@ -1321,52 +1360,48 @@ def df_initializer(demand, demand_growth, future_procurement_rows, future_procur
 def html_REC_balance_graph(json):
     df = pd.read_json(json)
 
-    dfout_dem = df[['demand','rec_req']]
-    dfout_dem.columns = ['Demand (MWh)','RPS Requirement (RECs/MWhs)']
-
-    dfout_rec = df[['rec_balance','rec_change']]
-    dfout_rec.columns = ['REC Balance (RECs)','REC Balance Change (RECs)']
+    df_bar = df[['fit_MWh','future_procurement', 'begin_rec_balance', 'rec_shortfall']]
+    df_bar.columns = ['RECs from FiT','RECs from Planned Procurement','Beginning REC Balance', 'Annual REC Shortfall']
 
     color_count = 0
-    traces_rec = []
-    for c in dfout_rec.columns:
+    traces = []
+
+    for c in df_bar.columns:
         color_ = list(color_dict.values())[color_count]
         trace = go.Bar(
-                x = list(dfout_rec.index),
-                y = list(dfout_rec[c]),
+                x = list(df_bar.index),
+                y = list(df_bar[c]),
                 name = c,
                 marker = dict(color=color_))
-        traces_rec.append(trace)
+        traces.append(trace)
         color_count+=1
     
-    traces_dem = []
-    for c in dfout_dem.columns:
-        color_ = list(color_dict.values())[color_count]
-        trace = go.Bar(
-                x = list(dfout_dem.index),
-                y = list(dfout_dem[c]),
-                name = c,
-                marker = dict(color=color_))
-        traces_dem.append(trace)
-        color_count+=1
+    color_ = list(color_dict.values())[color_count]
+    line_trace = go.Scatter(
+                    x = list(df_bar.index),
+                    y = list(df['rec_req']),
+                    name = 'REC Requirement',
+                    line=dict(color=color_, width=4),
+                    marker = dict(color=color_))
 
-    fig = tls.make_subplots(rows=2, cols=1, specs = [[{}], [{}]],
-                            shared_xaxes=True, vertical_spacing = 0.1)
+    traces.append(line_trace)
+    
+    layout = dict(
+        height=450,
+        title='RPS Requirements'
+        )
 
-    for t in traces_dem:
-        fig.append_trace(t, 1, 1)
+    fig = go.Figure(data=traces, layout=layout)
     
-    for t in traces_rec:
-        fig.append_trace(t, 2, 1)
-    
-    fig['layout'].update(height=400, barmode='group', xaxis=dict(tickmode='linear', dtick=1))
+    fig['layout'].update(barmode='stack')
+    fig['layout'].update(height=400, xaxis=dict(tickmode='linear', dtick=1))
     fig['layout'].update(legend=dict(orientation="h"))
-    fig['layout']['yaxis1'].update(title='MWhs')
-    fig['layout']['yaxis2'].update(title='RECs')
-    fig['layout']['margin'].update(l=20,r=20,b=20,t=60,pad=0)
+    fig['layout']['margin'].update(l=20,r=20,b=20,t=40,pad=0)
+    fig['layout']['yaxis'].update(title='RECs')
     fig['layout']['title'].update(text='RPS Requirements and REC Balance by Year', x=0.5)
-    
+
     return fig
+
     
 @app.callback(
     Output('demand_and_REC_table', 'data'),
@@ -1375,7 +1410,7 @@ def html_REC_balance_graph(json):
 def html_REC_balance_table(json):
     df = pd.read_json(json)
     df['Year'] = df.index
-    dfout = df[['Year','demand','rps_req','rec_req','recs_created','recs_expired','rec_balance','annual_rec_need']]
+    dfout = df[['Year','demand','rps_req','rec_req','rec_created','rec_expired','end_rec_balance','rec_shortfall']]
     dfout.columns = ['Year','Energy Sales (MWh)','RPS Requirement (%)','RPS Requirement (RECs)', 'RECs Created', 'RECs Expired','Year End REC Balance','REC Purchase Requirement']
     float_columns = ['Energy Sales (MWh)','RPS Requirement (RECs)', 'RECs Created', 'RECs Expired', 'Year End REC Balance','REC Purchase Requirement']
     dfout[float_columns] = dfout[float_columns].round(0)
@@ -1404,11 +1439,7 @@ def df_capacity_updater(json, solar_cf, dpv_cf, wind_cf, geothermal_cf, biomass_
         mw_need = (abs(mwh_need) / 8760) / (capacity_factor/100)
         return mw_need
 
-    df['rec_incremental_req'] = df['rec_change']
-    df['rec_incremental_req'] = df['rec_incremental_req'].diff(1)
-    df.loc[df['rec_balance'] > 0, 'rec_incremental_req'] = 0
-    df['rec_incremental_req'] = abs(df['rec_incremental_req'])
-
+    df['rec_incremental_req'] = df['rec_shortfall'].diff(1)
 
     df['Utility-Scale Solar_need'] = df.apply(new_capacity_calc, args=([solar_cf]), axis = 1)
     df['Distributed PV_need'] = df.apply(new_capacity_calc, args=([dpv_cf]), axis = 1)
@@ -1417,7 +1448,7 @@ def df_capacity_updater(json, solar_cf, dpv_cf, wind_cf, geothermal_cf, biomass_
     df['Wind_need'] = df.apply(new_capacity_calc, args=([wind_cf]), axis = 1)
     df['Biomass_need'] = df.apply(new_capacity_calc, args=([biomass_cf]), axis = 1)
 
-    df = df[['Utility-Scale Solar_need','Distributed PV_need', 'Geothermal_need','Wind_need','Biomass_need','Hydro_need','rec_balance','rec_incremental_req', 'rec_req', 'rec_change']]
+    df = df[['Utility-Scale Solar_need','Distributed PV_need', 'Geothermal_need','Wind_need','Biomass_need','Hydro_need','end_rec_balance','rec_incremental_req', 'rec_shortfall', 'rec_req', 'rec_change']]
     df = round(df, 2)
 
     return df.to_json()
@@ -1477,10 +1508,9 @@ def capacity_requirement_simple_graph(json, solar_cf, geothermal_cf):
 def one_year_build_graph(json, year_of_build, solar_cf, dpv_cf, wind_cf, hydro_cf, geothermal_cf, biomass_cf):
     df = pd.read_json(json)
     last_year = max(df.index)
-    last_year_recs = round(df.loc[last_year, 'rec_balance'],0)
-    last_year_rec_need = abs(min(0, last_year_recs))
+    total_rec_shortfall = df['rec_shortfall'].sum()
+    one_time_build_annual_need = total_rec_shortfall  / (last_year - year_of_build + 1)
 
-    one_time_build_annual_need = last_year_rec_need / (last_year - year_of_build + 1)
     solar_one_time = (one_time_build_annual_need / 8760) / (solar_cf/100)
     dpv_one_time = (one_time_build_annual_need / 8760) / (dpv_cf/100)
     wind_one_time = (one_time_build_annual_need / 8760) / (wind_cf/100)
@@ -1515,11 +1545,11 @@ def one_year_build_graph(json, year_of_build, solar_cf, dpv_cf, wind_cf, hydro_c
 )                     
 def capacity_text_maker(json, solar_cf, geothermal_cf):
     df = pd.read_json(json)
-    first_year_of_need = df.rec_balance.lt(0).idxmax()
+    first_year_of_need = df['end_rec_balance'].lt(0).idxmax()
     last_year = max(df.index)
-    total_recs = round(abs(df[df['rec_balance'] < 0]['rec_balance'].sum()),0)
-    first_year_recs = round(df.loc[first_year_of_need, 'rec_balance'],0)
-    last_year_recs = round(df.loc[last_year, 'rec_balance'],0)
+    total_recs = round(abs(df[df['end_rec_balance'] < 0]['end_rec_balance'].sum()),0)
+    first_year_recs = round(df.loc[first_year_of_need, 'end_rec_balance'],0)
+    last_year_recs = round(df.loc[last_year, 'end_rec_balance'],0)
 
 
     if first_year_recs < 0: #make sure that any recs will be needed
@@ -1643,6 +1673,7 @@ def lcoe_graph(rows, columns):
     Output('intermediate_dict_scenario','data'),
     [
     Input('intermediate_df','data'),
+    Input('future_procurement_df','data'),
     Input('energy_mix_table','data'),
     Input('energy_mix_table', 'columns'),
     Input('desired_pct','value'),
@@ -1650,9 +1681,10 @@ def lcoe_graph(rows, columns):
     Input('optimize_radio','value')
     ]
 )
-def scenario_dict_maker(json, rows, columns, desired_pct, scenario_tag, optimization): #remember to define optimization 
+def scenario_dict_maker(json1, json2, rows, columns, desired_pct, scenario_tag, optimization): #remember to define optimization 
 
-    df = pd.read_json(json)
+    df = pd.read_json(json1)
+    future_procurement = pd.read_json(json2)
 
     starting_demand = int(list(df['demand'])[0])
 
@@ -1675,13 +1707,23 @@ def scenario_dict_maker(json, rows, columns, desired_pct, scenario_tag, optimiza
     lcoe_df['fuel_emissions'] = lcoe_df['Generation Source'].map(emissions_dict)
     lcoe_df['emissions'] = lcoe_df['fuel_emissions'] * lcoe_df['current_MWh']
 
+    # --- Merge on planned procurement ---
+    future_procurement = future_procurement.groupby('Generation Source', as_index=False)['generation'].sum()
+    lcoe_df = lcoe_df.merge(future_procurement, on=['Generation Source'], how = 'left')
+    lcoe_df['generation'] = lcoe_df['generation'].fillna(0)
+    lcoe_df = lcoe_df.rename({'generation':'planned_generation'}, axis='columns')
+
+    print(lcoe_df)
+
     start_re = lcoe_df.loc[lcoe_df['Generation Source'].isin(re_tech)]['current_MWh'].sum()
     start_re_pct = round(start_re / start_demand,2)
     start_expense = round(lcoe_df['start_price'].sum(),0)
     start_fossil = lcoe_df.loc[lcoe_df['Generation Source'].isin(fossil_tech)]['current_MWh'].sum()
 
-    new_re_need = (end_demand  * desired_pct) - start_re #include losses, because this is interms of generation pct, not RECS
-    fossil_need = end_demand * (1-desired_pct)
+    planned_re = lcoe_df['planned_generation'].sum()
+    new_re_need = (end_demand  * desired_pct) - start_re - planned_re #include losses, because this is interms of generation pct, not RECS
+    new_re_need = max(new_re_need, 0)
+    fossil_need = end_demand - new_re_need - start_re - planned_re
     scenario = scenario_pct_dict[scenario_tag]
 
     curr_total_fossil_gen = lcoe_df.loc[lcoe_df['Generation Source'].isin(fossil_tech), 'current_MWh'].sum() #df of fossil fuels
@@ -1732,10 +1774,12 @@ def scenario_dict_maker(json, rows, columns, desired_pct, scenario_tag, optimiza
         # print('lcoe_df:')
         # print(lcoe_df)
         # print(' ')
+    lcoe_df['future_generation'] += lcoe_df['planned_generation']
 
     lcoe_df['future_price'] = lcoe_df['Levelized Cost of Energy (₱ / kWh)'] * lcoe_df['future_generation'] * 1000
     end_re = lcoe_df.loc[lcoe_df['Generation Source'].isin(re_tech)]['future_generation'].sum()
     end_recs = end_re - (start_re - start_recs)
+    end_re_pct = end_re / lcoe_df['future_generation'].sum()
 
 
     output_dict = dict()
@@ -1750,7 +1794,7 @@ def scenario_dict_maker(json, rows, columns, desired_pct, scenario_tag, optimiza
     output_dict['end_demand'] = int(end_demand)
     output_dict['end_re'] = int(end_re)
     output_dict['end_recs'] = float(end_recs)
-    output_dict['end_re_pct'] = float(desired_pct)
+    output_dict['end_re_pct'] = float(end_re_pct)
     output_dict['end_expense'] = int(lcoe_df['future_price'].sum())
     output_dict['end_generation_list'] = [int(i) for i in list(lcoe_df['future_generation'])]
     output_dict['techs'] = list(lcoe_df['Generation Source'])
@@ -1777,7 +1821,7 @@ def doughnut_graph(json):
             marker={'colors':colors},
             domain={"column": 0},
             textinfo='none',
-            hole = 0.55,
+            hole = 0.45,
             hoverinfo = 'label+percent',
             sort=False,
             title=f"{input_dict['start_year']} Power Mix<br>{int(input_dict['start_re_pct'] *100)}% Renewables")
@@ -1788,21 +1832,18 @@ def doughnut_graph(json):
             marker={'colors':colors},
             domain={"column": 1},
             textinfo='none',
-            hole=0.55,
+            hole=0.45,
             hoverinfo = 'label+percent',
             sort=False,
             title=f"{input_dict['end_year']} Power Mix<br>{int(input_dict['end_re_pct'] * 100)}% Renewables")
 
     traces = [start, end]
 
-    # layout = go.Layout(autosize = True, grid={"rows": 1, "columns": 2},showlegend=True,margin=dict(t=60,b=0,pad=0),height=300)
-    # 
-    # fig['layout']['margin'].update(l=60,r=20,b=100,t=50,pad=0)
-    # fig.update_layout(title=dict(text='Comparative Generation Mix 2018 vs. 2030',font_size=18,font_color='black',font_family='Helvetica',x=0.5,y=0.9)) #xanchor='center'
-    
-    layout = go.Layout(autosize=True, grid={"rows": 1, "columns": 2},showlegend=True)
+    layout = go.Layout(height=350, grid={"rows": 1, "columns": 2}, showlegend=True)
     fig = go.Figure(data = traces, layout = layout)
     fig['layout']['title'].update(text='Comparative Generation Mix 2018 vs. 2030', x=0.5)
+    fig['layout'].update(legend=dict(orientation="h"))
+    fig['layout']['margin'].update(l=40,r=40,b=0,t=40,pad=0)
     
     return fig
 
@@ -1824,16 +1865,9 @@ def economic_text_maker(rows, columns):
 
 
     out = f"""
-    The IRENA LCOE data informs us that the price of renewables has declined dramatically in recent years. Since 2010, the average LCOE for solar has declined 72% from $0.36 (Php 18) to $0.10 (Php 5) per kWh in 2017.
-    Over the same time period, wind's LCOE has declined 25% from $0.08 (Php 4) to $0.06 (Php 3) per kWh, while other technologies like geothermal, biomass, and hydro have remained constant or seen slight increases in cost. 
-    Renewables may be less expensive on a per kWh basis than coal or natural gas and also are not susceptible to fluctuations in fuel prices. 
-
     The Levelized Cost of Energy (PhP / kWh) data used in this calculator can be changed in the 'Energy Mix and Cost Input' tab of User Inputs. You can edit this to reflect prices that are specific to your utility. 
     Based on the current entries, the cost of utility-scale solar for your utility is **Php {round(solar_cost - coal_cost, 1)} / kWh** compared with the cost of coal generation,
     and the cost of biomass has a difference of **Php {round(biomass_cost - coal_cost, 1)} / kWh**.
-
-    Finally, consider that some REC procurement can be done through utility programs such as solar net-metering and the new GEOP, which allow customers to build their own renewables while providing the utility with RECs. 
-    Under the current GEOP design, a customer would pay for the entire system cost, while the utility would receive all RECs.
    """.replace('  ', '')
 
     return out
@@ -1862,18 +1896,7 @@ def savings_text_maker(json):
     end_cost_kwh_usd = round(end_cost_kwh / currency_exchange,3)
 
     out = f"""
-    ####
-    ###### View Changes in Generation Cost and RPS Creation: 
-    ####
-    Current: Php {start_cost:,}
-    ##### (**Php {start_cost_kwh} / kWh**)
-    ####
-    With **{int(end_re_pct * 100)}% renewables** in {input_dict['end_year']}: 
-    Php {end_cost:,}
-    ##### (**Php {end_cost_kwh} / kWh**) 
-    #### 
-    Currently, you are creating {input_dict['start_recs']:,} RECs per year, 
-    and in 2030 you would be creating {int(input_dict['end_recs']):,} RECs per year.
+    ###### Your current generation costs are ${start_cost_usd:,} (Php {start_cost:,}), or **${start_cost_kwh_usd} (Php {start_cost_kwh} / kWh)**. By switching to **{int(end_re_pct * 100)}% renewables** by {input_dict['end_year']}, your estimated generation costs would be ${end_cost_usd:,} (Php {end_cost:,}), or **${end_cost_kwh_usd} (Php {end_cost_kwh} / kWh)**. Currently you are creating {input_dict['start_recs']:,} RECs, and in 2030 you would be creating {int(input_dict['end_recs']):,} RECs per year. Future generation costs are estimates that may change as market conditions evolve.
         """.replace('  ', '')
 
     return out
@@ -1987,10 +2010,8 @@ def sankey_maker(json):
         arrangement = 'fixed',
     )])
 
-    re_pct = int(input_dict['end_re_pct']*100)
-
-    fig['layout']['title'].update(text=f'Difference in CO2e Emissions with {re_pct}% Renewables', x=0.5) #xanchor='center'
-    # fig.update_layout(height = 400, margin=dict(t=60,b=0,pad=0))
+    fig['layout']['title'].update(text=f'Difference in CO2e Emissions', x=0.5) #xanchor='center'
+    fig.update_layout(height = 300, margin=dict(t=60,b=40,pad=0))
 
     return fig
 
