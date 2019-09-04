@@ -15,10 +15,18 @@ import json as json_func
 # from textwrap3 import wrap
 import re
 
+def add_commas(df):
+    for c in df.columns:
+        df[c] = df[c].apply(lambda x : "{:,}".format(int(x)))
+    return df
+
+# --- Hide SeetingWithCopy Warnings --- 
+pd.set_option('chained_assignment',None)
+
 dummy_df = pd.read_csv('dummy_df.csv')
 dummy_df['Year'] = dummy_df.index
-dummy_df_display = dummy_df[['Year','demand','rec_req','rec_balance','rec_change']]
-dummy_df_display.columns = ['Year','Energy Sales (MWh)','RPS Requirement','REC Balance','REC Balance Change']
+dummy_df_display = dummy_df[['Year','demand','rps_req','rec_req','recs_created','recs_expired','rec_balance','annual_rec_need']]
+dummy_df_display.columns = ['Year','Energy Sales (MWh)','RPS Requirement (%)','RPS Requirement (RECs)', 'RECs Created', 'RECs Expired','Year End REC Balance','REC Purchase Requirement']
 
 irena_lcoe_df = pd.read_csv("irena_lcoe.csv")
 irena_lcoe_df = irena_lcoe_df.dropna(subset = ['Technology'])
@@ -94,10 +102,8 @@ def rps_df_maker(demand, demand_growth, future_procurement, fit_pct,
 
     df = df.fillna(0)
 
-    fit_MW = (fit_pct / 100) * demand
-
-
-    df['fit'] =  fit_MW
+    # --- Calculate FIT MWs (static, only based on first year) --- 
+    df['fit_MWh'] = fit_pct * demand / 100
 
     future_procurement = future_procurement.groupby(['Online Year'], as_index=False)['Annual Generation (MWh)'].sum()
     future_procurement = future_procurement.rename({'Online Year':'year'}, axis='columns')
@@ -110,11 +116,6 @@ def rps_df_maker(demand, demand_growth, future_procurement, fit_pct,
 
     df['future_procurement'] = future_procurement['Annual Generation (MWh)']
 
-    fit_requirement = pd.Series(fit_pct, index = df.index)
-    fit_requirement[2018] = 0
-    fit_requirement[2019] = 0
-    df['rps_req'] = df['rps_req'] + fit_requirement
-
     demand_for_calc = df['demand'].copy()
     demand_for_calc.index = [i + 1 for i in demand_for_calc.index]
     demand_for_calc.loc[2018] = 0
@@ -124,9 +125,37 @@ def rps_df_maker(demand, demand_growth, future_procurement, fit_pct,
     df['demand_for_calc'] = demand_for_calc
 
     df['rec_req'] = df['rps_req'] * df['demand_for_calc']
+    fit_requirement_MW = df['fit_MWh'].copy()
+    fit_requirement_MW[2018] = 0
+    fit_requirement_MW[2019] = 0
+    df['rec_req'] = df['rec_req'] + fit_requirement_MW
 
-    df['rec_change'] = (df['fit'] + df['future_procurement']) - df['rec_req']
+    df['recs_created'] = df['fit_MWh'] + df['future_procurement']
+
+    df['rec_change'] = df['recs_created'] - df['rec_req']
+    
     df['rec_balance'] = df['rec_change'].cumsum()
+    df['rec_balance'] = df['rec_balance'].clip(0)
+
+
+    # --- Number of RECs spent in past 3 years ---
+    df['rec_burden'] = df['rec_req'].rolling(4).sum()
+    df['rec_burden'] = df['rec_burden'] - df['rec_req']
+    df['three_year_old_recs'] = df['recs_created'].shift(4)
+    df['recs_expired'] = 0 
+    df.loc[df['three_year_old_recs'] > df['rec_burden'], 'recs_expired'] = df['three_year_old_recs'] - df['rec_burden']
+    df['rec_balance'] = df['rec_balance'] - df['recs_expired']
+
+
+    # --- Calculate Annual REC Need ---
+    df['annual_rec_need'] = 0
+    df.loc[df['rec_balance'] == 0, 'annual_rec_need'] = df['rec_change']
+    index_of_balance_change = df.loc[df['rec_balance'] > 0].index[-1]
+    df.loc[df.index == index_of_balance_change, 'annual_rec_need'] = df['rec_balance'] - df['rec_req']
+    df['annual_rec_need'] = df['annual_rec_need'].abs()
+
+    print(df)
+    print(index_of_balance_change)
 
     return df
 
@@ -135,11 +164,6 @@ app = dash.Dash(__name__)
 app.title = 'CEIA RPS Calculator'
 
 server = app.server
-
-# # Boostrap CSS.
-# app.css.append_css({
-#     "external_url":"https://codepen.io/chriddyp/pen/bWLwgP.css"
-# })
 
 app.layout = html.Div([
 
@@ -583,7 +607,7 @@ app.layout = html.Div([
                                         '\u003f\u20dd',
                                         html.Span('Under the 2008 RE Law, RECs from customer-subsidized feed-in-tariff projects are allocated to each utility proportional to their total energy sales. This value is expressed as a percent, sometimes called K0'
                                         , className="tooltiptext")], className="tooltip", style={'padding-left':5}),
-                                    dcc.Input(id="fit_pct", value=12942, type="number",style={'width':'100%'})
+                                    dcc.Input(id="fit_pct", value=3.34, type="number",style={'width':'100%'})
                                         ],
                                     className = 'four columns',
                                 ),
@@ -655,7 +679,7 @@ html.Div([
     html.Div([
         dcc.Graph(id="demand_and_REC_graph")
     ], 
-    className = 'six columns',
+    className = 'twelve columns',
     style={'margin-top':'60px'}),
 
     html.Div([
@@ -684,7 +708,7 @@ html.Div([
                 'fontWeight': 'bold'
                 }),
         ],
-    className='six columns',
+    className='twelve columns',
     style={'margin-top':60}),
     ],
 className = 'row',
@@ -1335,7 +1359,7 @@ def html_REC_balance_graph(json):
     for t in traces_rec:
         fig.append_trace(t, 2, 1)
     
-    fig['layout'].update(height=550, barmode='group', xaxis=dict(tickmode='linear', dtick=1))
+    fig['layout'].update(height=400, barmode='group', xaxis=dict(tickmode='linear', dtick=1))
     fig['layout'].update(legend=dict(orientation="h"))
     fig['layout']['yaxis1'].update(title='MWhs')
     fig['layout']['yaxis2'].update(title='RECs')
@@ -1351,9 +1375,12 @@ def html_REC_balance_graph(json):
 def html_REC_balance_table(json):
     df = pd.read_json(json)
     df['Year'] = df.index
-    dfout = df[['Year','demand','rec_req','rec_balance','rec_change']]
-    dfout.columns = ['Year','Energy Sales (MWh)','RPS Requirement','REC Balance','REC Balance Change']
-    dfout = round(dfout, 0)
+    dfout = df[['Year','demand','rps_req','rec_req','recs_created','recs_expired','rec_balance','annual_rec_need']]
+    dfout.columns = ['Year','Energy Sales (MWh)','RPS Requirement (%)','RPS Requirement (RECs)', 'RECs Created', 'RECs Expired','Year End REC Balance','REC Purchase Requirement']
+    float_columns = ['Energy Sales (MWh)','RPS Requirement (RECs)', 'RECs Created', 'RECs Expired', 'Year End REC Balance','REC Purchase Requirement']
+    dfout[float_columns] = dfout[float_columns].round(0)
+    dfout[float_columns] = add_commas(dfout[float_columns])
+    dfout['RPS Requirement (%)'] = [str(round(i*100, 1))+'%' for i in dfout['RPS Requirement (%)']]
     dictout = dfout.to_dict('records')
     return dictout
 
@@ -1639,7 +1666,7 @@ def scenario_dict_maker(json, rows, columns, desired_pct, scenario_tag, optimiza
     end_year = list(df.index)[-1]
     start_demand = list(df.demand)[0]
     end_demand = list(df.demand)[-1]
-    start_recs = list(df.fit)[0]
+    start_recs = list(df.rec_change)[0] #RECs currently being created
 
     lcoe_df['current_MWh'] = (lcoe_df['Percent of Utility Energy Mix'] / 100) * starting_demand
 
@@ -1930,14 +1957,6 @@ def sankey_maker(json):
     destination_list = [i + len(index_list) for i in index_list]
     max_destination = max(destination_list) + 1
     avoided_emission_destination = [max_destination for i in destination_list]
-
-    print(index_list)
-    print(destination_list)
-    print(max_destination)
-    print(avoided_emission_destination)
-    print(fossil_df)
-
-
     color_list = [color_dict[t] for t in fossil_df['Generation Source']]
     
     fig = go.Figure(data=[go.Sankey(
