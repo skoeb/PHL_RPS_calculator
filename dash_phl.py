@@ -20,7 +20,7 @@ pd.set_option('chained_assignment',None)
 
 # --- Run on Import ---
 if __name__ == "__main__":
-    functions.app.run_server(debug=True)
+    functions.app.run_server(debug=False)
 
 """
 TODO:
