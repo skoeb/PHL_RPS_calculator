@@ -1,15 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import dash
-import dash_table
-import dash_daq as daq
-import dash_core_components as dcc
-import dash_html_components as html
-from dash.dependencies import Output, Input, State
-import plotly.graph_objs as go
 import pandas as pd
-import plotly.tools as tls
-import json as json_func
 
 # --- Module Imports ---
 import resources
@@ -27,9 +19,11 @@ if __name__ == "__main__":
 
 """
 TODO:
--Revisit Incremental purchase requirement
+-Adjust to 100% (Clean up margins)
 -Clean up layout
 -RPS precent by year (table)?
 -Remove FIT percent input
 -Add FiT to Table RE PCT requirement
+-Add Natural Gas/Coal to LCOE
+-Add chart of utility generation expenditures per year
 """
