@@ -1,4 +1,4 @@
-##A decision support tool for renewable energy planning for utilities.
+**A decision support tool for renewable energy planning for utilities.**
 
 Master Version:https://phl-rps-calc.herokuapp.com/
 
