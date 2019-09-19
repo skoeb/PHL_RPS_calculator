@@ -687,58 +687,62 @@ html.Div([
     html.Div([
         
         html.Div([
-            dcc.Graph(id='doughnut_graph')
-        ],
-        className = 'eight columns',
-        ),
-
-        html.Div([
-            html.P("Desired Renewables Percent:",
-            style={'margin-bottom':40,'display':'inline-block'}),
-            #added question-mark 
             html.Div([
-                ' \u003f\u20dd',
-                html.Span('This value can reflect your RPS goal, incremental RPS targets, or any other aspirational RE percentages. Note: Any fossil retirements needed to meet this percentage will be distributed proportionately amongst available fossil capacity.'
-                , className="tooltiptext")], className="tooltip", style={'padding-left':5}),        
-            daq.Slider(
-                id='desired_pct',
-                min=10,
-                max=100,
-                value=30,
-                step=0.5,
-                marks={
-                    20:{'label':'20%', 'style': {'color': '#77b0b1'}},
-                    40:{'label':'40%', 'style': {'color': '#77b0b1'}},
-                    60:{'label':'60%', 'style': {'color': '#77b0b1'}},
-                    80:{'label':'80%', 'style': {'color': '#77b0b1'}},
-                    100:{'label':'100%', 'style': {'color': '#77b0b1'}},
-                    },
-                handleLabel={"showCurrentValue": True,"label": "PERCENT"},
-                size={'width':'100%'} #resizes to window
+                dcc.Graph(id='doughnut_graph')
+            ],
+            className = 'eight columns',
+            ),
+
+            html.Div([
+                html.P("Desired Renewables Percent:",
+                style={'margin-bottom':40,'display':'inline-block'}),
+                #added question-mark 
+                html.Div([
+                    ' \u003f\u20dd',
+                    html.Span('This value can reflect your RPS goal, incremental RPS targets, or any other aspirational RE percentages. Note: Any fossil retirements needed to meet this percentage will be distributed proportionately amongst available fossil capacity.'
+                    , className="tooltiptext")], className="tooltip", style={'padding-left':5}),        
+                daq.Slider(
+                    id='desired_pct',
+                    min=10,
+                    max=100,
+                    value=30,
+                    step=0.5,
+                    marks={
+                        20:{'label':'20%', 'style': {'color': '#77b0b1'}},
+                        40:{'label':'40%', 'style': {'color': '#77b0b1'}},
+                        60:{'label':'60%', 'style': {'color': '#77b0b1'}},
+                        80:{'label':'80%', 'style': {'color': '#77b0b1'}},
+                        100:{'label':'100%', 'style': {'color': '#77b0b1'}},
+                        },
+                    handleLabel={"showCurrentValue": True,"label": "PERCENT"},
+                    size={'width':'100%'} #resizes to window
+                    )
+                    ],
+                className = 'four columns',
+                style={'margin-top': 20}
+                ),
+            
+            html.Div([
+                dcc.RadioItems(
+                    id='scenario_radio',
+                    options=[
+                        {'label':'Utility-Scale Solar Growth', 'value':'SUN'},
+                        {'label':'High Net-Metering and GEOP Adoption', 'value':'NEM'},
+                        {'label':'Wind Growth', 'value':'WND'},
+                        {'label':'Biomass Growth', 'value':'BIO'},
+                        {'label':'Geothermal Growth', 'value':'GEO'},
+                        {'label':'Hydro Growth', 'value':'HYDRO'},
+                        {'label':'Balanced Renewable Adoption', 'value':'BAL'},
+                    ],
+                    value='BAL'
                 )
                 ],
-            className = 'four columns',
-            style={'margin-top': 20}
-            ),
-        
-        html.Div([
-            dcc.RadioItems(
-                id='scenario_radio',
-                options=[
-                    {'label':'Utility-Scale Solar Growth', 'value':'SUN'},
-                    {'label':'High Net-Metering and GEOP Adoption', 'value':'NEM'},
-                    {'label':'Wind Growth', 'value':'WND'},
-                    {'label':'Biomass Growth', 'value':'BIO'},
-                    {'label':'Geothermal Growth', 'value':'GEO'},
-                    {'label':'Hydro Growth', 'value':'HYDRO'},
-                    {'label':'Balanced Renewable Adoption', 'value':'BAL'},
-                ],
-                value='BAL'
-            )
-            ],
-            className='four columns',
-            style={'margin-top':60}
-            ),
+                className='four columns',
+                style={'margin-top':60}
+                ),
+        ],
+        className='twelve columns',
+        style={'margin-bottom':40,'margin-top':20}),
 
         html.Div([
             html.Div([

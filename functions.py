@@ -690,10 +690,6 @@ def capacity_text_maker(json, solar_cf, geothermal_cf):
     first_year_recs = round(df.loc[first_year_of_Need, 'rec_shortfall'],0)
     last_year_recs = round(df.loc[last_year, 'rec_shortfall'],0)
 
-    print(df['rec_shortfall'])
-    print(first_year_of_Need, first_year_recs)
-
-
     if first_year_recs != 0: #make sure that any recs will be needed
         first_year_recs = abs(first_year_recs)
         out = f"""
