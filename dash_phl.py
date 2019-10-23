@@ -15,14 +15,11 @@ server = functions.app.server
 
 # --- Run on Import ---
 if __name__ == "__main__":
-    functions.app.run_server(debug=False)
+    functions.app.run_server(debug=True)
 
 """
 TODO:
--Adjust to 100% (Clean up margins)
--Clean up layout
 -RPS precent by year (table)?
--Remove FIT percent input
 -Add FiT to Table RE PCT requirement
 -Add Natural Gas/Coal to LCOE
 -Add chart of utility generation expenditures per year

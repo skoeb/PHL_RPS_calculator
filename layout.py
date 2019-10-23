@@ -46,7 +46,6 @@ html_obj = html.Div([
     ),
 
     html.Div([
-
         html.Div([
 
             html.Div([
@@ -61,9 +60,10 @@ html_obj = html.Div([
             html.Div([
                 html.H3(
                     'Overview and Data Input:',
-                )],
-                className='twelve columns',
-                style={'margin-top':0}),
+                ), 
+            ],
+            className='twelve columns',
+            ),
 
             html.Div([
                 dcc.Markdown("""
@@ -79,7 +79,9 @@ html_obj = html.Div([
                     className='twelve columns',
                 ),
             ]),
-        ]),
+        ],
+        className='twelve columns'
+        ),
 
 #Selectors
         html.Div([
@@ -92,7 +94,7 @@ html_obj = html.Div([
                             html.Div([
                                 html.Div([
                                     html.P("Enter Utility Acronym:",style={'display':'inline-block'}),
-                                    #added question-mark 
+
                                     html.Div([
                                         ' \u003f\u20dd',
                                         html.Span('When a utility name (acronym) is selected, data such as annual energy sales, demand growth, and FiT allocation are automatically loaded from a 2017 DOE Database. Users can overwrite this data in the Manual Utility Data Input tab.'
@@ -103,8 +105,9 @@ html_obj = html.Div([
                                         multi=False,
                                         value='MERALCO',
                                     )
-                                ])
-                            ], style={'margin-top': 30, 'margin-bottom':30})
+                                ],
+                                style={'margin-top':30, 'margin-bottom':30})
+                            ])
                         ]),
                 
                 dcc.Tab(label='RPS Policy Details', className='custom-tab', selected_className='custom-tab--selected', value='rps-details',
@@ -112,7 +115,7 @@ html_obj = html.Div([
                             html.Div([
                                 html.Div([
                                     html.P("End Year of RPS:", style={'display':'inline-block'}),
-                                    #added question-mark 
+
                                     html.Div([
                                         ' \u003f\u20dd',
                                         html.Span('Under current law, the RPS will expire in 2030, however this could be extended.'
@@ -125,13 +128,12 @@ html_obj = html.Div([
                                         value=2030)
                                         ],
                                     className = 'four columns',
-                                    # style={'margin-top': 20}
                                 ),
 
                                 html.Div([
                                     html.P("2020-23 RPS Increment (%):",
                                     style={'display':'inline-block'}),
-                                    #added question mark
+
                                     html.Div([
                                         '\u003f\u20dd',
                                         html.Span('The annual marginal increase of the RPS requirement, the current law requires 1%, however this could be increased in the future.'
@@ -139,13 +141,12 @@ html_obj = html.Div([
                                     dcc.Input(id='annual_rps_inc_2020',value=1,type='number',step=0.25,style={'width':'100%'}, min=0.25)
                                         ],
                                     className='four columns',
-                                    # style={'margin-top': 20}
                                 ),
 
                                 html.Div([
                                     html.P("2023 - End RPS Increment (%):",
                                     style={'display':'inline-block'}),
-                                    #added question mark
+
                                     html.Div([
                                         '\u003f\u20dd',
                                         html.Span('The annual marginal increase of the RPS requirement, the current law requires 1%, however this could be increased in the future.'
@@ -154,6 +155,7 @@ html_obj = html.Div([
                                         ],
                                     className='four columns',
                                 ),
+
                             ], style={'margin-top':30, 'margin-bottom':126}) #not entirely sure why this is precisely 126, but it is so that tab lengths are even
                         ]),
                                 
@@ -164,7 +166,7 @@ html_obj = html.Div([
                                     #Table Inputs for Energy Mix and Future Procurement
                                     html.P("Update Cells with Utility Cost and Energy Mix Data:",
                                     style={'display':'inline-block'}),
-                                    #added question mark
+
                                     html.Div([
                                         '\u003f\u20dd',
                                         html.Span('For each generation source, please enter the Levelized Cost of Energy (LCOE) and percent of utility energy mix supplied by each generation source. For more information on what LCOE is, please refer to Part 3. The percent of utility energy mix represents generation supplied by each resource type divided by the total amount of supplied generation, this column must sum to 100%. Default LCOE data is from IRENA regional averages for South East Asia. Default values for percent of utility energy mix are derived from the average energy-mix for all utilities in the Philippines.'
@@ -175,40 +177,37 @@ html_obj = html.Div([
                                         columns=[{'name':i, 'id':i} for i in resources.energy_mix_df.columns],
                                         data=resources.energy_mix_df.to_dict('records'),
                                         style_cell_conditional=[
-                                        {
-                                    'if': {'column_id': c},
-                                    'textAlign': 'middle'
-                                        } for c in ['Generation Source']
-                                    ],
-                                    style_as_list_view=True,
-                                    style_cell={'font-family': 'Helvetica', 'font-size':'90%', 'textAlign':'center', 'maxWidth':100,'whiteSpace':'normal'},
-                                    style_table={'max-height':550},
-                                    editable=True,
-                                    style_data_conditional=[
-                                            {
-                                            'if': {'column_id':'Generation Source'},
-                                            'backgroundColor':'rgb(248, 248, 248)',
-                                            'textAlign':'left'
-                                            }
-                                        ],
-                                    style_header={
-                                        'backgroundColor':'rgb(230, 230, 230)',
-                                        'fontWeight': 'bold'
-                                        }),
-                                    html.P(' '),
-                                    dcc.Markdown(id="energy_mix_error_text", children=["init"],
-                                        
-                                        #style={'color'}
-                                    ),
-
+                                                {
+                                            'if': {'column_id': c},
+                                            'textAlign': 'middle'
+                                                } for c in ['Generation Source']
+                                            ],
+                                        style_as_list_view=True,
+                                        style_cell={'font-family': 'Helvetica', 'font-size':'90%', 'textAlign':'center', 'maxWidth':100,'whiteSpace':'normal'},
+                                        style_table={'max-height':550},
+                                        editable=True,
+                                        style_data_conditional=[
+                                                {
+                                                'if': {'column_id':'Generation Source'},
+                                                'backgroundColor':'rgb(248, 248, 248)',
+                                                'textAlign':'left'
+                                                }
+                                            ],
+                                        style_header={
+                                            'backgroundColor':'rgb(230, 230, 230)',
+                                            'fontWeight': 'bold'
+                                            }),
+                                        html.P(' '),
+                                        dcc.Markdown(id="energy_mix_error_text", children=["init"],
+                                        ),
                                 ],
                                 className='six columns',
                                 style={'margin-bottom':0, 'verticalAlign':'top'}),
 
                                 html.Div([
-                                    html.P("Add Any Planned Renewable Procurement (input capacity factors on the following tab):",
+                                    html.P("Add Any Planned Renewable Procurement:",
                                     style={'display':'inline-block'}),
-                                    #added question mark
+
                                     html.Div([
                                         '\u003f\u20dd',
                                         html.Span('Use this sheet to add in any planned renewable procurement that will count towards the RPS. For instance, if your utility has signed a solar PPA beginning in 2020, select Utility-Scale Solar as the generation source, and then specify the anticipated annual generation and year that the project will begin producing RECs. Use the Add Row button for additional entries'
@@ -264,14 +263,14 @@ html_obj = html.Div([
                                     #Table Inputs for Energy Mix and Future Procurement
                                     html.P("Enter Renewable Capacity Factors for Your Utility:",
                                     style={'display':'inline-block'}),
-                                    #added question mark
+
                                     html.Div([
                                         '\u003f\u20dd',
                                         html.Span('Capacity factor is a percentage value that represents the actual generation potential of a resource type. It is calculated by dividing the total anticipated generation from a resource for a time period, over the total amount that would be generated if the resource is available at full nameplate capacity for the same time period. Resources such as the Renewable Energy Data Explorer and the System Advisor Model (SAM) can help you determine renewable capacity factors for your area.'
                                         , className="tooltiptext")], className="tooltip", style={'padding-left':5}),
                                 ],
                                 className='twelve columns',
-                                style={'verticalAlign':'top'}),
+                                style={'margin-top':30,'verticalAlign':'top'}),
 
                                 html.Div([
                                     html.Div([
@@ -434,7 +433,7 @@ html_obj = html.Div([
                             html.Div([
                                 html.Div([
                                     html.P("Annual Energy Sales (MWh):",style={'display':'inline-block'}),
-                                    #added question-mark 
+
                                     html.Div([
                                         ' \u003f\u20dd',
                                         html.Span('Annual energy sales are equal to total electricity sales, this does not include line losses.'
@@ -446,7 +445,7 @@ html_obj = html.Div([
 
                                 html.Div([
                                     html.P("Annual Fit Percent (%):",style={'display':'inline-block'}),
-                                    #added question-mark 
+
                                     html.Div([
                                         '\u003f\u20dd',
                                         html.Span('Under the 2008 RE Law, RECs from customer-subsidized feed-in-tariff projects are allocated to each utility proportional to their total energy sales. This value is expressed as a percent, sometimes called K0'
@@ -459,7 +458,7 @@ html_obj = html.Div([
                                 html.Div([
                                     html.P("Annual Demand Growth (%):",
                                     style={'display':'inline-block'}),
-                                    #added question-mark 
+
                                     html.Div([
                                         '\u003f\u20dd',
                                         html.Span('The rate of electricity growth in your utility service territory, this rate will be applied to the inputed annual demand.'
@@ -486,8 +485,7 @@ html_obj = html.Div([
         html.Div([
             html.H3(
                 'Part 1: Your RPS Requirements')],
-            className='twelve columns',
-            style={'margin-top':0}),
+            className='twelve columns'),
 
         html.Div([
             dcc.Markdown("""
@@ -521,8 +519,7 @@ html.Div([
     html.Div([
         dcc.Graph(id="demand_and_REC_graph")
     ], 
-    className = 'twelve columns',
-    style={'margin-top':'40px'}),
+    className = 'twelve columns'),
 
     html.Div([
         dash_table.DataTable(
@@ -550,8 +547,7 @@ html.Div([
                 'fontWeight': 'bold'
                 }),
         ],
-    className='twelve columns',
-    style={'margin-top':40}),
+    className='twelve columns'),
     ],
 className = 'row',
 ),
@@ -571,21 +567,17 @@ html.Div([
         html.H3(
             'Part 2: Future Capacity Needs'
     )],
-    className='twelve columns',
-    style={'margin-top':0}
-    ),
+    className='twelve columns'),
 
     html.Div([
         html.Div([
             dcc.Markdown(id="capacity_text", children=["init"])
         ],
-        className = 'twelve columns',
-        style={'margin-top':15}),
+        className = 'twelve columns'),
 
         html.Div([
             dcc.Graph(id="capacity_incremental_graph")],
-        className = 'twelve columns',
-        style={'margin-top':15}),
+        className = 'twelve columns'),
 
     ],
     className='rows'),
@@ -607,9 +599,7 @@ html.Div([
         html.H3(
             'Part 3: Economic Analysis'
         )],
-    className='twelve columns',
-    style={'margin-top':-20}
-    ),
+    className='twelve columns'),
 
     html.Div([
         dcc.Markdown("""
@@ -632,27 +622,22 @@ html.Div([
 
     """.replace('  ', ''))
     ],
-    className='twelve columns',
-    style={'margin-top':20}
-    ),
+    className='twelve columns'),
     
     html.Div([
         html.Div([
             dcc.Markdown(id="economic_text", children=["init"])
         ],
-        className = 'input_box',
-        style={'margin-top':0}
-        ),
+        className = 'reference_box'),
     ],
-    className='row',
+    className='twelve columns',
     ),
 
     html.Div([
         html.Div([
             dcc.Graph(id='lcoe_graph')
         ],
-        className = 'twelve columns',
-        style={'margin-top':20}),
+        className = 'twelve columns'),
     ],
     className='row')
 ],
@@ -674,15 +659,12 @@ html.Div([
         html.H3(
             'Part 4: Goal Setting'
     )],
-    className='twelve columns',
-    style={'margin-top':-20}
-    ),
+    className='twelve columns'),
 
     html.Div([
             dcc.Markdown(id='goal_text')
         ],
-        className = 'twelve columns',
-        style={'margin-top':0}),
+        className = 'twelve columns'),
 
     html.Div([
         
@@ -694,13 +676,13 @@ html.Div([
             ),
 
             html.Div([
-                html.P("Desired Renewables Percent:",
-                style={'margin-bottom':40,'display':'inline-block'}),
-                #added question-mark 
+                html.P("Desired Renewables Percent:"),
+
                 html.Div([
                     ' \u003f\u20dd',
                     html.Span('This value can reflect your RPS goal, incremental RPS targets, or any other aspirational RE percentages. Note: Any fossil retirements needed to meet this percentage will be distributed proportionately amongst available fossil capacity.'
                     , className="tooltiptext")], className="tooltip", style={'padding-left':5}),        
+                
                 daq.Slider(
                     id='desired_pct',
                     min=10,
@@ -718,9 +700,7 @@ html.Div([
                     size={'width':'100%'} #resizes to window
                     )
                     ],
-                className = 'four columns',
-                style={'margin-top': 20}
-                ),
+                className = 'four columns'),
             
             html.Div([
                 dcc.RadioItems(
@@ -741,17 +721,15 @@ html.Div([
                 style={'margin-top':60}
                 ),
         ],
-        className='twelve columns',
-        style={'margin-bottom':40,'margin-top':20}),
+        className='twelve columns'),
 
         html.Div([
             html.Div([
                 dcc.Markdown(id='savings_text')
             ],
-            className = 'input_box'),
+            className = 'reference_box'),
         ],
-        className='twelve columns',
-        style={'margin-top':0}),
+        className='twelve columns'),
     ],
     className='row',
     ),
@@ -775,9 +753,7 @@ html.Div([
             html.H3(
                 'Part 5: Next Steps'
         )],
-        className='twelve columns',
-        style={'margin-top':-20}
-        ),
+        className='twelve columns'),
     
     html.Div([
         dcc.Markdown("""
@@ -788,8 +764,7 @@ html.Div([
         we recommend the following resources:
         """)
     ],
-    className='twelve columns',
-    style={'margin-top':30}),
+    className='twelve columns'),
     
     html.Div([
         html.Div([
@@ -807,8 +782,7 @@ html.Div([
             and in [this fact-sheet](https://www.nrel.gov/docs/fy18osti/68899.pdf).
             """.replace('  ', ''))
         ],
-        className='eight columns',
-        style={'margin-left':0, 'margin-top':15}),
+        className='eight columns'),
 
         html.A([
             html.Img(
@@ -841,8 +815,7 @@ html.Div([
             For a more detailed explanation of SAM, see [this technical report](https://www.nrel.gov/docs/fy14osti/61019.pdf), or visit the [SAM website](https://sam.nrel.gov/forum.html).
             """.replace('  ', ''))
         ],
-        className='eight columns',
-        style={'margin-left':0, 'margin-top':15}),
+        className='eight columns'),
 
         html.A([
             html.Img(
@@ -880,8 +853,7 @@ html.Div([
         ],
         className='row'),
     ],
-    className = 'input_box',
-    style={'margin-top':30}),
+    className = 'reference_box'),
 
     html.Div([
         html.Div([
@@ -925,8 +897,7 @@ html.Div([
         )],
         className = 'twelve columns'),
     ],
-    className = 'input_box',
-    style={'margin-top':30}),
+    className = 'reference_box'),
 
     html.Div([
         html.Img(

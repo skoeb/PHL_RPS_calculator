@@ -50,7 +50,7 @@ def rps_df_maker(demand, demand_growth, future_procurement, fit_pct,
     -----
         -demand (float): 2018 Demand in MWh
         -demand_growth (float): percent demand growth annual (i.e. 5 year average)
-        -future_procurement (df): df of future procurement, with MWh specefied in a 'generation' column. Assumed to be RE that is creating RECs.
+        -future_procurement (df): df of future procurement, with MWh specified in a 'generation' column. Assumed to be RE that is creating RECs.
         -fit_pct (float): pct of FiT allocation (see Hot Topic Paper for primer on FiT in PHL)
         -annual_rps_inc_2020 (float): pct RPS requirement in 2020 (set at 1%)
         -annual_rps_inc_2023 (float): pct RPS requirement between 2023 and 2030
@@ -95,6 +95,9 @@ def rps_df_maker(demand, demand_growth, future_procurement, fit_pct,
     demand_for_calc.loc[2020] = df['demand'][2018]
     demand_for_calc = demand_for_calc.sort_index()
     df['demand_for_calc'] = demand_for_calc
+
+    # --- clip RPS requirement to 100% ---
+    df['rps_req'] = df['rps_req'].clip(upper=1)
 
     df['rec_req'] = df['rps_req'] * df['demand_for_calc']
     fit_requirement_MW = df['fit_MWh'].copy()
