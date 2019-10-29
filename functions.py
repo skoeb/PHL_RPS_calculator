@@ -615,8 +615,8 @@ def lcoe_graph(rows, columns):
     fig['layout'].update(boxmode='group', showlegend=False, margin=dict(l=60,r=20,b=50,t=70,pad=0))
 
     # --- Define rectangle fossil shape ---
-    y_bottom_percent = fossil_range_low / 20
-    y_top_percent = fossil_range_high / 20
+    y_bottom_percent = max(fossil_range_low / 20, 1)
+    y_top_percent = max(fossil_range_high / 20, 1)
 
     shapes = [
         {'type': 'rect', 'x0':0, 'x1':1, 'y0':y_bottom_percent, 'y1':y_top_percent, 'xref': 'paper', 'yref': 'paper', 'fillcolor':'Brown', 'opacity':0.2, 'layer':'below'}
