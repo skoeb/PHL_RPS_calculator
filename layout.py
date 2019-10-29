@@ -576,9 +576,14 @@ html.Div([
         className = 'twelve columns'),
 
         html.Div([
-            dcc.Graph(id="capacity_incremental_graph")],
-        className = 'twelve columns'),
-
+            html.Div([
+                dcc.Graph(id="capacity_incremental_graph")],
+            className = 'six columns'),
+            
+            html.Div([
+                dcc.Graph(id="capacity_cum_graph")],
+            className = 'six columns'),
+        ])
     ],
     className='rows'),
 ]),
@@ -664,6 +669,7 @@ html.Div([
     html.Div([
             dcc.Markdown(id='goal_text')
         ],
+        style={'margin-bottom':20},
         className = 'twelve columns'),
 
     html.Div([
@@ -676,7 +682,10 @@ html.Div([
             ),
 
             html.Div([
-                html.P("Desired Renewables Percent:"),
+                html.Div([
+                    html.P("Desired Renewables Percent:")],
+                    style={'margin-bottom':20}
+                ),
 
                 html.Div([
                     ' \u003f\u20dd',

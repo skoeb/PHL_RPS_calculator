@@ -15,12 +15,11 @@ server = functions.app.server
 
 # --- Run on Import ---
 if __name__ == "__main__":
-    functions.app.run_server(debug=True)
+    functions.app.run_server(debug=False)
 
 """
 TODO:
 -RPS precent by year (table)?
--Add FiT to Table RE PCT requirement
+-Cumulative RE need plot
 -Add Natural Gas/Coal to LCOE
--Add chart of utility generation expenditures per year
 """
