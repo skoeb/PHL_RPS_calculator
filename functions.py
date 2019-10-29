@@ -423,7 +423,7 @@ def html_REC_balance_graph(json):
                     x = list(df_bar.index),
                     y = list(df['rec_req']),
                     name = 'REC Requirement',
-                    line=dict(color=color_, width=4),
+                    line=dict(color=color_, width=5),
                     marker = dict(color=color_))
 
     traces.append(line_trace)
@@ -453,7 +453,7 @@ def html_REC_balance_graph(json):
 def capacity_requirement_simple_graph(json):
     """Incremental capacity requirement."""
     df = pd.read_json(json)
-
+    
     traces = []
     for c in df.columns:
         if 'Need' in c:
@@ -464,13 +464,49 @@ def capacity_requirement_simple_graph(json):
                 y=list(df[c]),
                 name=name_,
                 mode='lines+markers',
-                line=dict(shape='hv', color=color_, width = 3),
+                line=dict(shape='hv', color=color_, width=5),
                 )
             traces.append(trace)
 
     layout = dict(
             height=450,
             title='Incremental Capacity (MW) Requirements'
+            )
+
+    fig = go.Figure(data=traces, layout=layout)
+
+    fig['layout']['yaxis'].update(title='MW')
+    fig['layout']['margin'].update(l=40,r=40,b=100,t=50,pad=0)
+    fig['layout'].update(legend=dict(orientation="h"))
+    fig['layout']['title'].update(x=0.5)
+
+    return fig
+
+@app.callback(
+Output('capacity_cum_graph', 'figure'),
+[Input('intermediate_df_capacity', 'data')]
+)
+def capacity_requirement_cumulative_graph(json):
+    """Cumulative capacity requirement."""
+    df = pd.read_json(json)
+
+    traces = []
+    for c in df.columns:
+        if 'Need' in c:
+            color_ = resources.color_dict[c.split('_')[0]]
+            name_ = c.replace('_',' ')
+            trace = go.Scatter(
+                x=list(df.index),
+                y=list(df[c].cumsum()), #cumsum for cumulative
+                name=name_,
+                mode='lines+markers',
+                line=dict(shape='spline', color=color_, width=5),
+                )
+            traces.append(trace)
+
+    layout = dict(
+            height=450,
+            title='Cumulative Capacity (MW) Requirements'
             )
 
     fig = go.Figure(data=traces, layout=layout)
@@ -498,16 +534,26 @@ def lcoe_graph(rows, columns):
     traces = []
     line_traces = []
     spacer_traces = []
+
+    # --- Calc min and max fossil cost ---
+    coal_input_cost = float(input_cost_df.loc[input_cost_df['Generation Source'] == 'Coal', 'Levelized Cost of Energy (₱ / kWh)'][0:1].item())
+    gas_input_cost = float(input_cost_df.loc[input_cost_df['Generation Source'] == 'Natural Gas', 'Levelized Cost of Energy (₱ / kWh)'][0:1].item())
+    oil_input_cost = float(input_cost_df.loc[input_cost_df['Generation Source'] == 'Oil', 'Levelized Cost of Energy (₱ / kWh)'][0:1].item())
+    fossil_costs = [coal_input_cost, gas_input_cost, oil_input_cost]
+    fossil_range_low = min(fossil_costs)
+    fossil_range_high = max(fossil_costs)
+    
     for t in ['Utility-Scale Solar','Wind','Geothermal','Biomass','Hydro']:
 
         color = resources.color_dict[t]
         dfloc = resources.irena_lcoe_df.loc[resources.irena_lcoe_df['Technology'] == t]
+
         min_2010 = round(dfloc.loc[(dfloc['Year'] == 2010) & (dfloc['Item'] == 'MIN')]['pesos'][0:1].item(),2)
         max_2010 = round(dfloc.loc[(dfloc['Year'] == 2010) & (dfloc['Item'] == 'MAX')]['pesos'][0:1].item(),2)
         avg_2010 = round(dfloc.loc[(dfloc['Year'] == 2010) & (dfloc['Item'] == 'AVG')]['pesos'][0:1].item(),2)
-        min_2017 = round(dfloc.loc[(dfloc['Year'] == 2017) & (dfloc['Item'] == 'MIN')]['pesos'][0:1].item(),2)
-        max_2017 = round(dfloc.loc[(dfloc['Year'] == 2017) & (dfloc['Item'] == 'MAX')]['pesos'][0:1].item(),2)
-        avg_2017 = round(dfloc.loc[(dfloc['Year'] == 2017) & (dfloc['Item'] == 'AVG')]['pesos'][0:1].item(),2)
+        min_2017 = round(dfloc.loc[(dfloc['Year'] == 2018) & (dfloc['Item'] == 'MIN')]['pesos'][0:1].item(),2)
+        max_2017 = round(dfloc.loc[(dfloc['Year'] == 2018) & (dfloc['Item'] == 'MAX')]['pesos'][0:1].item(),2)
+        avg_2017 = round(dfloc.loc[(dfloc['Year'] == 2018) & (dfloc['Item'] == 'AVG')]['pesos'][0:1].item(),2)
 
         input_cost = input_cost_df.loc[input_cost_df['Generation Source'] == t, 'Levelized Cost of Energy (₱ / kWh)'][0:1].item()
 
@@ -568,9 +614,27 @@ def lcoe_graph(rows, columns):
 
     fig['layout'].update(boxmode='group', showlegend=False, margin=dict(l=60,r=20,b=50,t=70,pad=0))
 
+    # --- Define rectangle fossil shape ---
+    shapes = [
+        {'type': 'rect', 'x0':0.8, 'x1':3.5, 'y0':fossil_range_low, 'y1':fossil_range_high, 'xref': 'x1', 'yref': 'y1', 'fillcolor':'Brown', 'opacity':0.2, 'layer':'below'},
+        {'type': 'rect', 'x0':0.8, 'x1':3.5, 'y0':fossil_range_low, 'y1':fossil_range_high, 'xref': 'x2', 'yref': 'y2', 'fillcolor':'Brown', 'opacity':0.2, 'layer':'below'},
+        {'type': 'rect', 'x0':0.8, 'x1':3.5, 'y0':fossil_range_low, 'y1':fossil_range_high, 'xref': 'x3', 'yref': 'y3', 'fillcolor':'Brown', 'opacity':0.2, 'layer':'below'},
+        {'type': 'rect', 'x0':0.8, 'x1':3.5, 'y0':fossil_range_low, 'y1':fossil_range_high, 'xref': 'x4', 'yref': 'y4', 'fillcolor':'Brown', 'opacity':0.2, 'layer':'below'},
+        {'type': 'rect', 'x0':0.8, 'x1':3.5, 'y0':fossil_range_low, 'y1':fossil_range_high, 'xref': 'x5', 'yref': 'y5', 'fillcolor':'Brown', 'opacity':0.2, 'layer':'below'}
+    ]
+    fig['layout'].update(shapes=shapes)
+
+    fig.add_trace(go.Scatter(
+        x=[3],
+        y=[fossil_range_high - 1],
+        text=["Fossil Fuel<br>LCOE Range"],
+        mode="text",
+        textfont={'size':10}
+    ))
+
     for i in range(1,len(traces) + 1):
         fig['layout'][f'xaxis{i}'].update(tickvals=[1,1.2,2.2,3.2],
-        ticktext=[' ','Global<br>2010 LCOE','Global<br>2017 LCOE','Your Actual<br>2019 LCOE'],
+        ticktext=[' ','Global<br>2010 LCOE','Global<br>2018 LCOE','Your Actual<br>2019 LCOE'],
         tickangle=0, tickfont=dict(size=10))
         
     fig['layout']['yaxis'].update(title='₱ / kWh LCOE', range=[0,20])
