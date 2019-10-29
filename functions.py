@@ -615,23 +615,21 @@ def lcoe_graph(rows, columns):
     fig['layout'].update(boxmode='group', showlegend=False, margin=dict(l=60,r=20,b=50,t=70,pad=0))
 
     # --- Define rectangle fossil shape ---
-    print('fossil', fossil_range_low, fossil_range_high)
+    y_bottom_percent = fossil_range_low / 20
+    y_top_percent = fossil_range_high / 20
+
     shapes = [
-        {'type': 'rect', 'x0':0.8, 'x1':3.5, 'y0':fossil_range_low, 'y1':fossil_range_high, 'xref': 'x1', 'yref': 'y1', 'fillcolor':'Brown', 'opacity':0.2, 'layer':'below'},
-        {'type': 'rect', 'x0':0.8, 'x1':3.5, 'y0':fossil_range_low, 'y1':fossil_range_high, 'xref': 'x2', 'yref': 'y2', 'fillcolor':'Brown', 'opacity':0.2, 'layer':'below'},
-        {'type': 'rect', 'x0':0.8, 'x1':3.5, 'y0':fossil_range_low, 'y1':fossil_range_high, 'xref': 'x3', 'yref': 'y3', 'fillcolor':'Brown', 'opacity':0.2, 'layer':'below'},
-        {'type': 'rect', 'x0':0.8, 'x1':3.5, 'y0':fossil_range_low, 'y1':fossil_range_high, 'xref': 'x4', 'yref': 'y4', 'fillcolor':'Brown', 'opacity':0.2, 'layer':'below'},
-        {'type': 'rect', 'x0':0.8, 'x1':3.5, 'y0':fossil_range_low, 'y1':fossil_range_high, 'xref': 'x5', 'yref': 'y5', 'fillcolor':'Brown', 'opacity':0.2, 'layer':'below'}
+        {'type': 'rect', 'x0':0, 'x1':1, 'y0':y_bottom_percent, 'y1':y_top_percent, 'xref': 'paper', 'yref': 'paper', 'fillcolor':'Brown', 'opacity':0.2, 'layer':'below'}
     ]
     fig['layout'].update(shapes=shapes)
 
-    # fig.add_trace(go.Scatter(
-    #     x=[3],
-    #     y=[fossil_range_high - 1],
-    #     text=["Fossil Fuel<br>LCOE Range"],
-    #     mode="text",
-    #     textfont={'size':10}
-    # ))
+    fig.add_trace(go.Scatter(
+        x=[3],
+        y=[fossil_range_high - 1],
+        text=["Fossil Fuel<br>LCOE Range"],
+        mode="text",
+        textfont={'size':10}
+    ))
 
     for i in range(1,len(traces) + 1):
         fig['layout'][f'xaxis{i}'].update(tickvals=[1,1.2,2.2,3.2],
