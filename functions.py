@@ -615,12 +615,11 @@ def lcoe_graph(rows, columns):
     fig['layout'].update(boxmode='group', showlegend=False, margin=dict(l=60,r=20,b=50,t=70,pad=0))
 
     # --- Define rectangle fossil shape ---
+    y_bottom_percent = max(fossil_range_low / 20, 1)
+    y_top_percent = max(fossil_range_high / 20, 1)
+
     shapes = [
-        {'type': 'rect', 'x0':0.8, 'x1':3.5, 'y0':fossil_range_low, 'y1':fossil_range_high, 'xref': 'x1', 'yref': 'y1', 'fillcolor':'Brown', 'opacity':0.2, 'layer':'below'},
-        {'type': 'rect', 'x0':0.8, 'x1':3.5, 'y0':fossil_range_low, 'y1':fossil_range_high, 'xref': 'x2', 'yref': 'y2', 'fillcolor':'Brown', 'opacity':0.2, 'layer':'below'},
-        {'type': 'rect', 'x0':0.8, 'x1':3.5, 'y0':fossil_range_low, 'y1':fossil_range_high, 'xref': 'x3', 'yref': 'y3', 'fillcolor':'Brown', 'opacity':0.2, 'layer':'below'},
-        {'type': 'rect', 'x0':0.8, 'x1':3.5, 'y0':fossil_range_low, 'y1':fossil_range_high, 'xref': 'x4', 'yref': 'y4', 'fillcolor':'Brown', 'opacity':0.2, 'layer':'below'},
-        {'type': 'rect', 'x0':0.8, 'x1':3.5, 'y0':fossil_range_low, 'y1':fossil_range_high, 'xref': 'x5', 'yref': 'y5', 'fillcolor':'Brown', 'opacity':0.2, 'layer':'below'}
+        {'type': 'rect', 'x0':0, 'x1':1, 'y0':y_bottom_percent, 'y1':y_top_percent, 'xref': 'paper', 'yref': 'paper', 'fillcolor':'Brown', 'opacity':0.2, 'layer':'below'}
     ]
     fig['layout'].update(shapes=shapes)
 
