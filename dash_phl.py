@@ -20,6 +20,4 @@ if __name__ == "__main__":
 """
 TODO:
 -RPS precent by year (table)?
--Cumulative RE need plot
--Add Natural Gas/Coal to LCOE
 """
