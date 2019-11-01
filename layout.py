@@ -684,7 +684,7 @@ html.Div([
             html.Div([
                 html.Div([
                     html.P("Desired Renewables Percent:")],
-                    style={'margin-bottom':20}
+                    style={'margin-bottom':40, 'display':'inline-block'}
                 ),
 
                 html.Div([
