@@ -588,6 +588,51 @@ html.Div([
     className='rows'),
 ]),
 
+html.Div([
+
+    html.Div([
+        dcc.Markdown("""
+                The table below displays a projection of **cumulative capacity requirements** for your utility by year and technology.
+                This table is identical to the Cumulative Capacity Table above this to the right. This data can be interpreted as the cumulative amount of RE capacity to be procured
+                by the utility by a given year. Keep in mind that RECs can be banked for future years, so procuring capacity earlier than required could reduce your overall requirement.
+                The export button above allows you to download this table.** 
+        """.replace('  ',''))],
+        className='twelve columns',
+        style={'margin-top':30}
+        ),
+
+    html.Div([
+        dash_table.DataTable(
+            id='capacity_cum_table',
+            columns=[{'name':i, 'id':i} for i in resources.dummy_requirements_df.columns],
+            data=resources.dummy_requirements_df.to_dict('records'),
+            export_format = 'csv',
+            style_cell_conditional=[
+                {
+            'if': {'column_id': c},
+            'textAlign': 'middle'
+                } for c in ['Year']
+            ],
+            style_as_list_view=True,
+            style_cell={'font-family': 'Helvetica', 'font-size':'90%', 'textAlign':'center', 'maxWidth':100,'whiteSpace':'normal'},
+            style_table={'max-height':550, 'overflowY':'scroll'},
+            style_data_conditional=[
+                    {
+                    'if': {'row_index':'odd'},
+                    'backgroundColor':'rgb(248, 248, 248)',
+                    }
+                ],
+            style_header={
+                'backgroundColor':'rgb(230, 230, 230)',
+                'fontWeight': 'bold'
+                }),
+        ],
+    className='twelve columns',
+    style={'margin-top':30}),
+    ],
+className = 'row',
+),
+
 # Part 3: Economic Analysis
 html.Div([
 
@@ -684,7 +729,7 @@ html.Div([
             html.Div([
                 html.Div([
                     html.P("Desired Renewables Percent:")],
-                    style={'margin-bottom':20}
+                    style={'margin-bottom':40, 'display':'inline-block'}
                 ),
 
                 html.Div([

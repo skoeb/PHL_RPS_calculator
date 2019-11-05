@@ -518,6 +518,7 @@ def capacity_requirement_cumulative_graph(json):
 
     return fig
 
+
 # ------ SECTION 3 ------
 @app.callback(
     Output('lcoe_graph', 'figure'),
@@ -707,6 +708,38 @@ def html_REC_balance_table(json):
     dfout[float_columns] = add_commas(dfout[float_columns])
     dfout['RPS Requirement (%)'] = [str(round(i*100, 1))+'%' for i in dfout['RPS Requirement (%)']]
     dictout = dfout.to_dict('records')
+    return dictout
+
+
+@app.callback(
+Output('capacity_cum_table', 'data'),
+[Input('intermediate_df_capacity', 'data')]
+)
+def cumulative_table(json):
+    """Cumulative capacity requirement by technology type and year."""
+    df = pd.read_json(json)
+    
+    # --- Grab the columns we need ---
+    keep_cols = [c for c in list(df.columns) if 'Need' in c]
+    dfout = df[keep_cols]
+
+    # ---Clean and cumulative ---
+    dfout = dfout.fillna(0)
+    dfout = dfout.cumsum()
+    dfout = dfout.round(0)
+    dfout = add_commas(dfout)
+
+    # --- Add years column ---
+    dfout['Year'] = dfout.index
+
+    # --- Grab column names from dummy_requirements_df ---
+    out_columns = ['Year'] + keep_cols
+    dfout = dfout[out_columns]
+    clean_cols = list(resources.dummy_requirements_df.columns)
+    dfout.columns = clean_cols
+
+    dictout = dfout.to_dict('records')
+
     return dictout
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
