@@ -12,10 +12,9 @@ pd.set_option('chained_assignment',None)
 
 # --- Server ---
 server = functions.app.server
-
 # --- Run on Import ---
 if __name__ == "__main__":
-    functions.app.run_server(debug=False)
+    functions.app.run_server(debug=True)
 
 """
 TODO:

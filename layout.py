@@ -588,6 +588,39 @@ html.Div([
     className='rows'),
 ]),
 
+html.Div([
+    html.Div([
+        dash_table.DataTable(
+            id='capacity_cum_table',
+            columns=[{'name':i, 'id':i} for i in resources.dummy_requirements_df.columns],
+            data=resources.dummy_requirements_df.to_dict('records'),
+            export_format = 'csv',
+            style_cell_conditional=[
+                {
+            'if': {'column_id': c},
+            'textAlign': 'middle'
+                } for c in ['Year']
+            ],
+            style_as_list_view=True,
+            style_cell={'font-family': 'Helvetica', 'font-size':'90%', 'textAlign':'center', 'maxWidth':100,'whiteSpace':'normal'},
+            style_table={'max-height':550, 'overflowY':'scroll'},
+            style_data_conditional=[
+                    {
+                    'if': {'row_index':'odd'},
+                    'backgroundColor':'rgb(248, 248, 248)',
+                    }
+                ],
+            style_header={
+                'backgroundColor':'rgb(230, 230, 230)',
+                'fontWeight': 'bold'
+                }),
+        ],
+    className='twelve columns',
+    style={'margin-top':30}),
+    ],
+className = 'row',
+),
+
 # Part 3: Economic Analysis
 html.Div([
 

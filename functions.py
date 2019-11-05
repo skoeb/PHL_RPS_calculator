@@ -518,6 +518,7 @@ def capacity_requirement_cumulative_graph(json):
 
     return fig
 
+
 # ------ SECTION 3 ------
 @app.callback(
     Output('lcoe_graph', 'figure'),
@@ -707,6 +708,34 @@ def html_REC_balance_table(json):
     dfout[float_columns] = add_commas(dfout[float_columns])
     dfout['RPS Requirement (%)'] = [str(round(i*100, 1))+'%' for i in dfout['RPS Requirement (%)']]
     dictout = dfout.to_dict('records')
+    return dictout
+
+
+@app.callback(
+Output('capacity_cum_table', 'data'),
+[Input('intermediate_df_capacity', 'data')]
+)
+def cumulative_table(json):
+    """XYZ."""
+    df = pd.read_json(json)
+    
+    keep_cols = [c for c in list(df.columns) if 'Need' in c]
+    dfout = df[keep_cols]
+
+    clean_cols = [c.split('_')[0] for c in list(dfout.columns)]
+    dfout.columns = clean_cols
+
+    dfout = dfout.fillna(0)
+    dfout = dfout.cumsum()
+    dfout = dfout.round(0)
+    dfout = add_commas(dfout)
+
+    dfout['Year'] = dfout.index
+    out_columns = ['Year'] + clean_cols
+    dfout = dfout[out_columns]
+
+    dictout = dfout.to_dict('records')
+
     return dictout
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

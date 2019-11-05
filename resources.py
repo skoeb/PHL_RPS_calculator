@@ -20,6 +20,8 @@ new_build_df = pd.DataFrame({'Generation Source':['Utility-Scale Solar', '', '']
 
 dummy_desired_pct_df = pd.read_csv("dummy_desired_pct.csv")
 
+dummy_requirements_df = pd.read_csv("dummy_requirement.csv")
+
 utility_df = pd.read_csv("utility_data.csv", index_col='utility')
 utility_dict = utility_df[~utility_df.index.duplicated(keep='first')].to_dict('index')
 
