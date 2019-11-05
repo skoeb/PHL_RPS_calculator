@@ -722,17 +722,18 @@ def cumulative_table(json):
     keep_cols = [c for c in list(df.columns) if 'Need' in c]
     dfout = df[keep_cols]
 
-    clean_cols = [c.split('_')[0] for c in list(dfout.columns)]
-    dfout.columns = clean_cols
-
     dfout = dfout.fillna(0)
     dfout = dfout.cumsum()
     dfout = dfout.round(0)
     dfout = add_commas(dfout)
 
     dfout['Year'] = dfout.index
-    out_columns = ['Year'] + clean_cols
+
+    out_columns = ['Year'] + keep_cols
     dfout = dfout[out_columns]
+
+    clean_cols = list(resources.dummy_requirements_df.columns)
+    dfout.columns = clean_cols
 
     dictout = dfout.to_dict('records')
 

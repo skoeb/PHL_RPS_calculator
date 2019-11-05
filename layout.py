@@ -589,6 +589,18 @@ html.Div([
 ]),
 
 html.Div([
+
+    html.Div([
+        dcc.Markdown("""
+                The table below displays a projection of **cumulative capacity requirements** for your utility by year and technology.
+                This table is identical to the Cumulative Capacity Table above this to the right. This data can be interpreted as the cumulative amount of RE capacity to be procured
+                by the utility by a given year. Keep in mind that RECs can be banked for future years, so procuring capacity earlier than required could reduce your overall requirement.
+                The export button above allows you to download this table.** 
+        """.replace('  ',''))],
+        className='twelve columns',
+        style={'margin-top':30}
+        ),
+
     html.Div([
         dash_table.DataTable(
             id='capacity_cum_table',
