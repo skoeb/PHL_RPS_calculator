@@ -716,22 +716,25 @@ Output('capacity_cum_table', 'data'),
 [Input('intermediate_df_capacity', 'data')]
 )
 def cumulative_table(json):
-    """XYZ."""
+    """Cumulative capacity requirement by technology type and year."""
     df = pd.read_json(json)
     
+    # --- Grab the columns we need ---
     keep_cols = [c for c in list(df.columns) if 'Need' in c]
     dfout = df[keep_cols]
 
+    # ---Clean and cumulative ---
     dfout = dfout.fillna(0)
     dfout = dfout.cumsum()
     dfout = dfout.round(0)
     dfout = add_commas(dfout)
 
+    # --- Add years column ---
     dfout['Year'] = dfout.index
 
+    # --- Grab column names from dummy_requirements_df ---
     out_columns = ['Year'] + keep_cols
     dfout = dfout[out_columns]
-
     clean_cols = list(resources.dummy_requirements_df.columns)
     dfout.columns = clean_cols
 
