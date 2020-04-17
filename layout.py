@@ -999,7 +999,7 @@ html.Div([
                 }
             ),
         ],
-        className='six columns'),
+        className='five columns'),
     ],
     className='ten columns offset-by-two',
     style={'margin-top':25}
@@ -1021,7 +1021,7 @@ html.Div([
                 src='assets/United States govt logo.png',
                 className='two columns',
                 style={
-                    'width': '30%',
+                    'width': '20%',
                     'height': 'auto',
                     'float': 'center',
                     'position': 'relative',
@@ -1032,7 +1032,7 @@ html.Div([
                 src='assets/BMUB logo.png',
                 className='two columns',
                 style={
-                    'width': '30%',
+                    'width': '40%',
                     'height': 'auto',
                     'float': 'center',
                     'position': 'relative',
@@ -1050,10 +1050,10 @@ html.Div([
                 }
             ),
         ],
-            className='six columns'),
+            className='five columns'),
     ],
         className='ten columns offset-by-two',
-        style={'margin-top': 25}
+        style={'margin-top': 25, 'text-align':'center'}
     ),
 
 
