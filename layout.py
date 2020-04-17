@@ -751,7 +751,7 @@ html.Div([
                         100:{'label':'100%', 'style': {'color': '#77b0b1'}},
                         },
                     handleLabel={"showCurrentValue": True,"label": "PERCENT"},
-                    size={'width':'100%'} #resizes to window
+                    # size={'width':'100%'} #resizes to window
                     )
                     ],
                 className = 'four columns'),
@@ -905,7 +905,7 @@ html.Div([
                 Please contact the CEIA's in-country lead––Marlon Apanada––with any questions at <amj@allotropepartners.com>.
                 """.replace('  ', '')),
         ],
-        className='row'),
+        className='twelve columns'),
     ],
     className = 'reference_box'),
 
@@ -952,6 +952,110 @@ html.Div([
         className = 'twelve columns'),
     ],
     className = 'reference_box'),
+
+    # --- CEIA Info ---
+    html.Div([
+
+        html.Div([
+            html.P("The CEIA is jointly implemented by WRI, NREL, and Allotrope Partners",
+                   style={'font-size': '125%',
+                          'font-style': 'italic', 'text-align': 'center'}
+            )
+        ],
+        className='four columns'),
+
+        html.Div([
+            
+            html.Img(
+                src='assets/WRI_logo_4c.png',
+                className='two columns',
+                style={
+                    'width':'30%',
+                    'height':'auto',
+                    'float':'center',
+                    'position':'relative',
+                }
+            ),
+
+            html.Img(
+                src='assets/Allotrope_Logo_hi-res.png',
+                className='two columns',
+                style={
+                    'width': '30%',
+                    'height': 'auto',
+                    'float': 'center',
+                    'position': 'relative',     
+                }
+            ),
+
+            html.Img(
+                src='assets/NREL logo w tagline.png',
+                className='two columns',
+                style={
+                    'width':'30%',
+                    'height':'auto',
+                    'float':'center',
+                    'position':'relative',
+                }
+            ),
+        ],
+        className='six columns'),
+    ],
+    className='ten columns offset-by-two',
+    style={'margin-top':25}
+    ),
+
+    # --- Funder info ---
+    html.Div([
+
+        html.Div([
+            html.P("The CEIA is supported by a range of public, private, and philanthropic partners",
+                   style={'font-size': '125%', 'font-style': 'italic', 'text-align':'center'}
+                   )
+        ],
+            className='four columns'),
+
+        html.Div([
+
+            html.Img(
+                src='assets/United States govt logo.png',
+                className='two columns',
+                style={
+                    'width': '30%',
+                    'height': 'auto',
+                    'float': 'center',
+                    'position': 'relative',
+                }
+            ),
+
+            html.Img(
+                src='assets/BMUB logo.png',
+                className='two columns',
+                style={
+                    'width': '30%',
+                    'height': 'auto',
+                    'float': 'center',
+                    'position': 'relative',
+                }
+            ),
+
+            html.Img(
+                src='assets/P4G large_logo.png',
+                className='two columns',
+                style={
+                    'width': '30%',
+                    'height': 'auto',
+                    'float': 'center',
+                    'position': 'relative',
+                }
+            ),
+        ],
+            className='six columns'),
+    ],
+        className='ten columns offset-by-two',
+        style={'margin-top': 25}
+    ),
+
 
     html.Div([
         html.Img(
