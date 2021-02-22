@@ -68,7 +68,7 @@ html_obj = html.Div([
             html.Div([
                 dcc.Markdown("""
                     The Philippines RPS is a legislative mandate requiring utilities to increase their use of renewable resources including
-                    *“biomass, waste to energy technology, wind, solar, run-of-river, impounding hydropower sources that meet internationally accepted standards, ocean, hybrid systems, 
+                    *“biomass, waste-to-energy technology, wind, solar, run-of-river, impounding hydropower sources that meet internationally accepted standards, ocean, hybrid systems, 
                     geothermal and other RE technologies that may be later identified by the DOE."* 
                     
                     The RPS requires all utilities to increase their utilization of renewable energy by 1% of their total energy sales (kWh) each year beginning in 2020, although this percentage can be increased in the future by the National Renewable Energy Board.
