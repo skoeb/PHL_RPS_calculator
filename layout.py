@@ -125,7 +125,7 @@ html_obj = html.Div([
                                         options=[{'label':i, 'value': i} for i in range(2030,2051,5)],
                                         clearable=False,
                                         multi=False,
-                                        value=2030)
+                                        value=2040) #EC: change default year
                                         ],
                                     className = 'four columns',
                                 ),
@@ -138,8 +138,8 @@ html_obj = html.Div([
                                         '\u003f\u20dd',
                                         html.Span('The annual marginal increase of the RPS requirement, the current law requires 1%, however this could be increased in the future.'
                                         , className="tooltiptext")], className="tooltip", style={'padding-left':5}),        
-                                    dcc.Input(id='annual_rps_inc_2020',value=1,type='number',step=0.25,style={'width':'100%'}, min=0.25)
-                                        ],
+                                    dcc.Input(id='annual_rps_inc_2020',value=1,type='number',step=0.01,style={'width':'100%'}, min=0.25)
+                                        ], #EC: change increment step
                                     className='four columns',
                                 ),
 
