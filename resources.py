@@ -28,6 +28,9 @@ utility_dict = utility_df[~utility_df.index.duplicated(keep='first')].to_dict('i
 emissions_df = pd.read_csv('emissions.csv')
 emissions_dict = dict(zip(emissions_df['Generation Source'], emissions_df['CO2']))
 
+## EC: add FIT data input
+fit_df = pd.read_csv("fit_data.csv")
+
 re_tech = ['Utility-Scale Solar','Net-Metering','GEOP','Wind','Geothermal','Biomass','Hydro']
 fossil_tech = ['Coal', 'Natural Gas','Oil', 'WESM Purchases']
 

@@ -119,7 +119,7 @@ html_obj = html.Div([
                                     html.Div([
                                         ' \u003f\u20dd',
                                         html.Span('Under current law, the RPS will expire in 2030, however this could be extended.'
-                                        , className="tooltiptext")], className="tooltip", style={'padding-left':5}),
+                                        , className="tooltiptext")], className="tooltip", style={'padding-left':5, 'width':'80%'}),
                                     dcc.Dropdown(
                                         id='end_year',
                                         options=[{'label':i, 'value': i} for i in range(2030,2051,5)],
@@ -138,20 +138,34 @@ html_obj = html.Div([
                                         '\u003f\u20dd',
                                         html.Span('The annual marginal increase of the RPS requirement, the current law requires 1%, however this could be increased in the future.'
                                         , className="tooltiptext")], className="tooltip", style={'padding-left':5}),        
-                                    dcc.Input(id='annual_rps_inc_2020',value=1,type='number',step=0.01,style={'width':'100%'}, min=0.25)
+                                    dcc.Input(id='annual_rps_inc_2020',value=1,type='number',step=0.01,style={'width':'80%'}, min=0.25)
+                                        ], #EC: change increment step
+                                    className='four columns',
+                                ),
+
+## EC: add RPS increment for 2023-2030
+                                html.Div([
+                                    html.P("2023-30 RPS Increment (%):",
+                                    style={'display':'inline-block'}),
+
+                                    html.Div([
+                                        '\u003f\u20dd',
+                                        html.Span('The expected annual marginal increase of the RPS requirement from 2023 to 2030.'
+                                        , className="tooltiptext")], className="tooltip", style={'padding-left':5}),        
+                                    dcc.Input(id='annual_rps_inc_2023',value=1,type='number',step=0.01,style={'width':'80%'}, min=0.25)
                                         ], #EC: change increment step
                                     className='four columns',
                                 ),
 
                                 html.Div([
-                                    html.P("2023 - End RPS Increment (%):",
+                                    html.P("2030 - End RPS Increment (%):",
                                     style={'display':'inline-block'}),
 
                                     html.Div([
                                         '\u003f\u20dd',
-                                        html.Span('The annual marginal increase of the RPS requirement, the current law requires 1%, however this could be increased in the future.'
+                                        html.Span('The expected annual marginal increase of the RPS requirement beyond 2030.'
                                         , className="tooltiptext")], className="tooltip", style={'padding-left':5}),        
-                                    dcc.Input(id='annual_rps_inc_2023',value=1,type='number',step=0.25,style={'width':'100%'}, min=0.25)
+                                    dcc.Input(id='annual_rps_inc_2030',value=1,type='number',step=0.01,style={'width':'80%'}, min=0.25)
                                         ],
                                     className='four columns',
                                 ),

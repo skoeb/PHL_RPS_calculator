@@ -41,7 +41,8 @@ def add_commas(df):
 
 # --- General Functions ---
 def rps_df_maker(demand, demand_growth, future_procurement, fit_pct,
-                 annual_rps_inc_2020, annual_rps_inc_2023, 
+                 annual_rps_inc_2020, annual_rps_inc_2023,
+                 annual_rps_inc_2030, 
                  end_year):
     """
     Funciton to calculate RPS obligations in the Philippines.
@@ -54,9 +55,10 @@ def rps_df_maker(demand, demand_growth, future_procurement, fit_pct,
         -fit_pct (float): pct of FiT allocation (see Hot Topic Paper for primer on FiT in PHL)
         -annual_rps_inc_2020 (float): pct RPS requirement in 2020 (set at 1%)
         -annual_rps_inc_2023 (float): pct RPS requirement between 2023 and 2030
+        -annual_rps_inc_2030 (float): pct RPS requirement beyond 2030
         -end_year (int): last year of RPS.  
     """
-    daterange = pd.date_range(start = '2018', end = str(end_year), freq = 'Y')
+    daterange = pd.date_range(start = '2020', end = str(end_year), freq = 'Y')
 
     df = pd.DataFrame(index = daterange)
 
@@ -64,12 +66,14 @@ def rps_df_maker(demand, demand_growth, future_procurement, fit_pct,
     df = df.set_index('year')
 
     df['demand_growth'] = demand_growth + 1
-    df.loc[2018, 'demand_growth'] = 1
+    df.loc[2020, 'demand_growth'] = 1
     df['demand_growth'] = df['demand_growth'].cumprod()
     df['demand'] = demand * df['demand_growth']
 
     df.loc[2020:2022,'rps_marginal_req'] = annual_rps_inc_2020 #no requirement till 2020
-    df.loc[2023:, 'rps_marginal_req'] = annual_rps_inc_2023 #presidential elections in 2022
+    ## EC: add 2023-2030 requirement and extend to 2040
+    df.loc[2023:2030, 'rps_marginal_req'] = annual_rps_inc_2023
+    df.loc[2031:, 'rps_marginal_req'] = annual_rps_inc_2030
     df['rps_req'] = df['rps_marginal_req'].cumsum()
 
     df = df.fillna(0)
@@ -90,9 +94,9 @@ def rps_df_maker(demand, demand_growth, future_procurement, fit_pct,
 
     demand_for_calc = df['demand'].copy()
     demand_for_calc.index = [i + 1 for i in demand_for_calc.index]
-    demand_for_calc.loc[2018] = 0
-    demand_for_calc.loc[2019] = 0
-    demand_for_calc.loc[2020] = df['demand'][2018]
+    #demand_for_calc.loc[2018] = 0
+    #demand_for_calc.loc[2019] = 0
+    demand_for_calc.loc[2020] = df['demand'][2020]
     demand_for_calc = demand_for_calc.sort_index()
     df['demand_for_calc'] = demand_for_calc
 
@@ -101,8 +105,8 @@ def rps_df_maker(demand, demand_growth, future_procurement, fit_pct,
 
     df['rec_req'] = df['rps_req'] * df['demand_for_calc']
     fit_requirement_MW = df['fit_MWh'].copy()
-    fit_requirement_MW[2018] = 0
-    fit_requirement_MW[2019] = 0
+    #fit_requirement_MW[2018] = 0
+    #fit_requirement_MW[2019] = 0
     df['rec_req'] = df['rec_req'] + fit_requirement_MW
 
     df['rec_created'] = df['fit_MWh'] + df['future_procurement']
@@ -233,20 +237,25 @@ def desired_pct_updater(json, rows, columns):
         Input("fit_pct", "value"),
         Input("annual_rps_inc_2020", "value"),
         Input("annual_rps_inc_2023", "value"),
+        Input("annual_rps_inc_2030", "value"),
         Input("end_year", "value"),
     ])
 def df_initializer(demand, demand_growth, json,
-                    fit_pct, annual_rps_inc_2020, annual_rps_inc_2023, end_year):
+                    fit_pct, annual_rps_inc_2020, annual_rps_inc_2023, 
+                    annual_rps_inc_2030,
+                    end_year):
     """Initialize df with RPS req info."""
     future_procurement = pd.read_json(json)
 
     demand_growth = float(demand_growth) / 100
     annual_rps_inc_2020 = float(annual_rps_inc_2020) / 100
     annual_rps_inc_2023 = float(annual_rps_inc_2023) / 100
+    annual_rps_inc_2030 = float(annual_rps_inc_2030) / 100
     end_year = int(end_year) + 1
 
     df = rps_df_maker(demand=demand, demand_growth=demand_growth, future_procurement=future_procurement, fit_pct=fit_pct,
                     annual_rps_inc_2020=annual_rps_inc_2020, annual_rps_inc_2023=annual_rps_inc_2023,
+                    annual_rps_inc_2030=annual_rps_inc_2030,
                     end_year=end_year)
     df = round(df, 3)
     return df.to_json()
